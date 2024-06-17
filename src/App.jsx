@@ -8,6 +8,7 @@ import { customColors } from './Constants/helper';
 import SplashScreen from './SplashScreen';
 import HomeScreen from './Screens/Home/Home';
 import LoginScreen from './Screens/Login/Login';
+import WebViewScreen from './Screens/Home/WebViewScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ const App = () => {
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Home" component={HomeScreen} />
                     <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="WebViewScreen" component={WebViewScreen} />
                 </Stack.Navigator>
             </SafeAreaView>
         </NavigationContainer>

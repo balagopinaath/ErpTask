@@ -150,9 +150,18 @@ export default LocationIndicator;
 const styles = (colors) =>
     StyleSheet.create({
         card: {
+            width: "85%",
+            alignSelf: 'center',
             backgroundColor: colors.background === '#000000' ? colors.black : colors.white,
             borderRadius: 10,
             padding: 15,
+            shadowColor: colors.background === "#000000" ? colors.white : colors.black,
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
             elevation: 3,
             marginVertical: 10,
             marginHorizontal: 20

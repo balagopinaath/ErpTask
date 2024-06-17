@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, ActivityIndicator, Image } from 'react-native';
 import { customColors, typography } from './Constants/helper';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,7 +35,8 @@ const SplashScreen = () => {
         <View style={styles(colors).container}>
             {loading && (
                 <React.Fragment>
-                    <Text style={styles(colors).title}>SMT ERP</Text>
+                    <Image source={require('../assets/images/logo.png')} style={styles(colors).logo} />
+                    {/* <Text style={styles(colors).title}>SMT ERP</Text> */}
                     <ActivityIndicator size="large" color={colors.white} style={styles(colors).loader} />
                 </React.Fragment>
             )}
@@ -49,6 +50,11 @@ const styles = (colors) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: colors.primary
+    },
+    logo: {
+        width: 100,
+        height: 100,
+        marginBottom: 20
     },
     title: {
         ...typography.h1(colors),

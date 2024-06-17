@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View, useColorScheme } from 'react-native'
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View, useColorScheme } from 'react-native'
 import React, { useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { customColors, typography } from '../../Constants/helper';
@@ -39,9 +39,8 @@ const LoginScreen = () => {
 
             if (data.success) {
                 await AsyncStorage.setItem('userToken', data.user.Autheticate_Id);
-                userData(data.user);
+                await userData(data.user);
                 // setForm({ mobile: '', password: '' });
-                // setIsLogged(true)
                 ToastAndroid.show(data.message, ToastAndroid.LONG);
                 navigation.replace("Home")
             } else {
@@ -57,62 +56,72 @@ const LoginScreen = () => {
 
     const userData = async (data) => {
         try {
-            console.log('userdata', data)
-            await AsyncStorage.setItem('userToken', data.Autheticate_Id);
-            await AsyncStorage.setItem('UserId', data.UserId);
-            await AsyncStorage.setItem('Company_Id', String(data.Company_id));
-            await AsyncStorage.setItem('userName', data.UserName);
-            await AsyncStorage.setItem('Name', data.Name);
-            await AsyncStorage.setItem('UserType', data.UserType);
-            await AsyncStorage.setItem('branchId', String(data.BranchId));
-            await AsyncStorage.setItem('branchName', data.BranchName);
-            await AsyncStorage.setItem('userType', data.UserType);
-            await AsyncStorage.setItem('userTypeId', data.UserTypeId);
+            await AsyncStorage.multiSet([
+                ['UserId', data.UserId],
+                ['Company_Id', String(data.Company_id)],
+                ['userName', data.UserName],
+                ['Name', data.Name],
+                ['UserType', data.UserType],
+                ['branchId', String(data.BranchId)],
+                ['branchName', data.BranchName],
+                ['userType', data.UserType],
+                ['userTypeId', data.UserTypeId]
+            ]);
         } catch (e) {
             console.error('Error storing data:', e);
         }
     };
 
-
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.topBackground}>
-                {/* Top background object */}
-            </View>
-            <View style={styles.bottomBackground}>
-                {/* Bottom background object */}
-            </View>
-            <View style={styles.formContainer}>
-                <Text style={typography.h1(colors)}>Login</Text>
-                <Text style={typography.body1(colors)}>Please sign in to continue.</Text>
-                <TextInput
-                    style={[styles.input, { backgroundColor: colors.secondary }]}
-                    placeholder="Mobile Number"
-                    placeholderTextColor={colors.textSecondary}
-                    value={form.mobile}
-                    onChangeText={(value) => setForm({ ...form, mobile: value })}
-                    keyboardType="default"
-                />
-                <TextInput
-                    style={[styles.input, { backgroundColor: colors.secondary }]}
-                    placeholder="Password"
-                    placeholderTextColor={colors.textSecondary}
-                    value={form.password}
-                    onChangeText={(value) => setForm({ ...form, password: value })}
-                    secureTextEntry
-                />
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <View style={[styles(colors).container, { backgroundColor: colors.background }]}>
+                <View style={styles(colors).topBackground}>
+                    {/* Top background object */}
+                </View>
+                <View style={styles(colors).bottomBackground}>
+                    {/* Bottom background object */}
+                </View>
+                <View style={styles(colors).formContainer}>
+                    <Text style={[typography.h1(colors), { fontStyle: 'italic' }]}>Login</Text>
+                    <Text style={typography.body1(colors)}>Please sign in to continue.</Text>
+                    <TextInput
+                        style={[styles(colors).input, { backgroundColor: colors.secondary }]}
+                        placeholder="Mobile Number"
+                        placeholderTextColor={colors.textSecondary}
+                        value={form.mobile}
+                        autoCapitalize='none'
+                        onChangeText={(value) => setForm({ ...form, mobile: value })}
+                        keyboardType="default"
+                    />
+                    <TextInput
+                        style={[styles(colors).input, { backgroundColor: colors.secondary }]}
+                        placeholder="Password"
+                        placeholderTextColor={colors.textSecondary}
+                        value={form.password}
+                        onChangeText={(value) => setForm({ ...form, password: value })}
+                        secureTextEntry
+                        autoCapitalize='none'
+                    />
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleLogin}>
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles(colors).button, { backgroundColor: colors.accent }]}
+                        onPress={handleLogin}
+                        disabled={isSubmitting}
+                    >
+                        <Text style={styles(colors).buttonText}>Login</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 
 export default LoginScreen
 
-const styles = StyleSheet.create({
+const styles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
@@ -123,7 +132,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: "15%",
-        backgroundColor: '#20cb98',
+        backgroundColor: colors.primary,
         borderBottomRightRadius: 750,
     },
     bottomBackground: {
@@ -132,7 +141,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: "15%",
-        backgroundColor: '#20cb98',
+        backgroundColor: colors.primary,
         borderTopLeftRadius: 750,
     },
     formContainer: {
@@ -142,10 +151,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 35,
     },
     input: {
+        ...typography.body1(colors),
         height: 50,
         borderRadius: 10,
         paddingHorizontal: 15,
         marginVertical: 10,
+        borderWidth: 1,
+        borderColor: '#A9A9A9',
         width: '100%',
     },
     button: {
@@ -157,17 +169,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     buttonText: {
-        color: '#fff',
+        ...typography.button(colors),
         fontWeight: 'bold',
-        fontSize: 16,
-    },
-    forgotText: {
-        alignSelf: 'flex-end',
-        color: '#FF6347', // Adjust color as needed
-    },
-    signUpText: {
-        alignSelf: 'center',
-        marginTop: 20,
-        color: '#A9A9A9', // Adjust color as needed
     },
 });

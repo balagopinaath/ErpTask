@@ -1,4 +1,4 @@
-import { Alert, BackHandler, Linking, StyleSheet, Text, ToastAndroid, TouchableOpacity, View, useColorScheme } from 'react-native'
+import { StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View, useColorScheme } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { customColors, typography } from '../../Constants/helper';
 import LocationIndicator from '../../Components/LocationIndicator';
@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../Constants/api';
 import Icon from 'react-native-vector-icons/AntDesign'
 import { useNavigation } from '@react-navigation/native';
+import { Modal } from 'react-native';
+import { Image } from 'react-native';
 
 const HomeScreen = () => {
     const colorScheme = useColorScheme();
@@ -13,15 +15,17 @@ const HomeScreen = () => {
     const colors = customColors[isDarkMode ? 'dark' : 'light'];
     const navigation = useNavigation();
 
-    const [location, setLoction] = useState({ latitude: null, longitude: null })
+    const [location, setLocation] = useState({ latitude: null, longitude: null });
     const [isActive, setIsActive] = useState(null);
-    const [date, setDate] = useState();
+    const [date, setDate] = useState(null);
     const [lastAttendance, setLastAttendance] = useState({});
+    const [modalVisible, setModalVisible] = useState(false);
+    const [description, setDescription] = useState('');
 
-    const [userId, setUserId] = useState({});
-    const [name, setName] = useState();
-    const [token, setToken] = useState();
-    const [userType, setUserType] = useState();
+    const [userId, setUserId] = useState(null);
+    const [name, setName] = useState(null);
+    const [token, setToken] = useState(null);
+    const [userType, setUserType] = useState(null);
 
     useEffect(() => {
         (async () => {
@@ -30,16 +34,16 @@ const HomeScreen = () => {
                 const name = await AsyncStorage.getItem('Name');
                 const token = await AsyncStorage.getItem('userToken');
                 const userType = await AsyncStorage.getItem('UserType');
-                setUserType(userType)
+                setUserType(userType);
                 fetchLastAttendance(id);
-                setUserId(id)
-                setToken(token)
-                setName(name)
+                setUserId(id);
+                setToken(token);
+                setName(name);
             } catch (err) {
                 console.log('Error retrieving user data:', err);
             }
-        })()
-    }, [])
+        })();
+    }, []);
 
     useEffect(() => {
         if (userId) {
@@ -48,30 +52,28 @@ const HomeScreen = () => {
     }, [isActive]);
 
     const fetchLastAttendance = async (id) => {
-        fetch(`${api.getLastAttendance}${id}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data?.success && data?.data?.length > 0) {
-                    setIsActive(data.data[0].Active_Status)
-                    if (data.data[0].Active_Status === 1) {
-                        setDate(data.data[0].Start_Date)
-                    } else {
-                        setDate(data.data[0].End_Date)
-                    }
-                    setLastAttendance(data?.data[0])
-                }
-            })
-    }
+        // console.log(`${api.getLastAttendance}${id}`)
+        try {
+            const response = await fetch(`${api.getLastAttendance}${id}`);
+            const data = await response.json();
+            if (data.success && data.data && data.data.length > 0) {
+                setIsActive(data.data[0].Active_Status);
+                setDate(data.data[0].Active_Status === 1 ? data.data[0].Start_Date : data.data[0].End_Date);
+                setLastAttendance(data.data[0]);
+            }
+        } catch (error) {
+            console.log('Error fetching last attendance:', error);
+        }
+    };
 
     const handleLocationUpdate = (locationData) => {
-        setLoction({
+        setLocation({
             latitude: locationData.latitude,
             longitude: locationData.longitude,
-        })
+        });
     };
 
     const handleStartDay = () => {
-        console.log(location)
         fetch(api.attendance, {
             method: "POST",
             headers: {
@@ -82,15 +84,23 @@ const HomeScreen = () => {
                 Latitude: location.latitude,
                 Longitude: location.longitude,
             })
-        }).then(res => res.json())
+        })
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    ToastAndroid.show(data.message, ToastAndroid.LONG)
+                    ToastAndroid.show(data.message, ToastAndroid.LONG);
                     setIsActive(1);
                 } else {
-                    ToastAndroid.show(data.message, ToastAndroid.LONG)
+                    ToastAndroid.show(data.message, ToastAndroid.LONG);
                 }
             })
+            .catch(error => {
+                console.log('Error starting day:', error);
+            });
+    };
+
+    const showEndDayModal = () => {
+        setModalVisible(true);
     };
 
     const handleEndDay = () => {
@@ -101,41 +111,48 @@ const HomeScreen = () => {
             },
             body: JSON.stringify({
                 Id: lastAttendance.Id,
-                Description: 'Mobile Testing'
+                Description: description,
             })
-        }).then(res => res.json())
+        })
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    ToastAndroid.show(data.message, ToastAndroid.LONG)
-                    setIsActive(0)
+                    ToastAndroid.show(data.message, ToastAndroid.LONG);
+                    setIsActive(0);
                 } else {
-                    ToastAndroid.show(data.message, ToastAndroid.LONG)
+                    ToastAndroid.show(data.message, ToastAndroid.LONG);
                 }
+                setModalVisible(false);
+                setDescription('')
             })
+            .catch(error => {
+                ToastAndroid.show('Error ending day:', error, ToastAndroid.LONG);
+            });
     };
 
     const logout = async () => {
         try {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('UserId');
-            await AsyncStorage.removeItem('Company_Id');
-            await AsyncStorage.removeItem('userName');
-            await AsyncStorage.removeItem('Name');
-            await AsyncStorage.removeItem('UserType');
-            await AsyncStorage.removeItem('branchId');
-            await AsyncStorage.removeItem('branchName');
-            await AsyncStorage.removeItem('userTypeId');
+            await AsyncStorage.multiRemove([
+                'userToken',
+                'UserId',
+                'Company_Id',
+                'userName',
+                'Name',
+                'UserType',
+                'branchId',
+                'branchName',
+                'userTypeId'
+            ]);
             navigation.replace('Splash');
-            ToastAndroid.show("You have been logged out!", ToastAndroid.LONG)
+            ToastAndroid.show("You have been logged out!", ToastAndroid.LONG);
         } catch (e) {
             console.log('Error logging out:', e);
         }
-    }
+    };
 
     return (
         <View style={styles(colors).container}>
-
-            <View style={styles(colors).header} >
+            <View style={styles(colors).header}>
                 <Text style={styles(colors).headerContent}>Welcome, {name}</Text>
                 <TouchableOpacity onPress={() => logout()}>
                     <Icon name="logout" size={24} color="white" />
@@ -143,7 +160,7 @@ const HomeScreen = () => {
             </View>
 
             {userType === 'EMPLOYEE' && (
-                <React.Fragment>
+                <>
                     <LocationIndicator onLocationUpdate={handleLocationUpdate} />
 
                     <View style={styles(colors).card}>
@@ -164,46 +181,71 @@ const HomeScreen = () => {
                                 </Text>
                             </View>
                             {isActive === 0 ? (
-                                <TouchableOpacity onPress={handleStartDay} style={[styles(colors).button, { backgroundColor: isActive === 0 ? colors.primary : colors.accent }]}>
+                                <TouchableOpacity onPress={handleStartDay} style={[styles(colors).button, { backgroundColor: colors.primary }]}>
                                     <Text style={styles(colors).buttonText}>Start Day</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <TouchableOpacity onPress={handleEndDay} style={[styles(colors).button, { backgroundColor: isActive === 0 ? colors.primary : colors.accent }]}>
+                                <TouchableOpacity onPress={showEndDayModal} style={[styles(colors).button, { backgroundColor: colors.accent }]}>
                                     <Text style={styles(colors).buttonText}>End Day</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
                     </View>
-                </React.Fragment>
+                </>
             )}
 
             <View style={styles(colors).webCard}>
-                <TouchableOpacity
-                    style={styles(colors).iconView}
-                    onPress={() => {
-                        const url = `https://erpsmt.in?Auth=${token}`;
-                        Linking.openURL(url);
-                    }}>
-                    <Icon name="barschart" size={25} color={colors.primary} />
-                    <Text style={styles(colors).text}>ERP APP</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles(colors).iconView}
-                    onPress={() => {
-                        const url = `https://erpsmt.in?Auth=${token}`;
-                        Linking.openURL(url);
-                    }}>
-                    <Icon name="barschart" size={25} color={colors.primary} />
-                    <Text style={styles(colors).text}>Task APP</Text>
-                </TouchableOpacity>
+                {/* {userType !== 'EMPLOYEE' && (<Text style={styles(colors).cardTitle}>ERP</Text>)} */}
+                <View>
+                    <TouchableOpacity
+                        style={styles(colors).iconView}
+                        onPress={() => {
+                            navigation.navigate('WebViewScreen', { url: `https://erpsmt.in?Auth=${token}` });
+                        }}>
+                        <Image source={userType === 'EMPLOYEE' ? require('../../../assets/images/clipboard.png') : require('../../../assets/images/analytics.png')} style={styles(colors).logo} />
+                        <Text style={styles(colors).text}>{userType === 'EMPLOYEE' ? "Task" : "ERP"}</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={(styles(colors).centeredView)}>
+                    <View style={styles(colors).modalView}>
+                        <Text style={styles(colors).modalText}>End Day Description</Text>
+                        <TextInput
+                            style={styles(colors).input}
+                            placeholder="Enter description"
+                            value={description}
+                            onChangeText={setDescription}
+                        />
+                        <View style={styles(colors).buttonGroup}>
+                            <TouchableOpacity
+                                style={[styles(colors).button, { backgroundColor: colors.accent }]}
+                                onPress={handleEndDay}
+                            >
+                                <Text style={styles(colors).buttonText}>Submit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles(colors).button, { backgroundColor: colors.primary, marginLeft: 15 }]}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles(colors).buttonText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal >
+            <View style={styles(colors).bottomBackground}>
+                {/* Bottom background object */}
+            </View>
         </View>
     );
-
-}
+};
 
 export default HomeScreen
 
@@ -218,30 +260,33 @@ const styles = (colors) => StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: colors.primary,
         padding: 15,
+        marginBottom: 20,
     },
     headerContent: {
         ...typography.h3(colors),
         color: colors.white,
     },
-
     card: {
+        width: "85%",
+        alignSelf: 'center',
         backgroundColor: colors.background,
-        padding: 16,
-        borderRadius: 8,
+        padding: 20,
+        borderRadius: 10,
         marginVertical: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowColor: colors.background === "#000000" ? colors.white : colors.black,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-        width: '80%',
-        alignSelf: 'center',
     },
     cardTitle: {
-        fontSize: 20,
+        textAlign: 'left',
+        ...typography.h5(colors),
         fontWeight: 'bold',
-        marginBottom: 12,
-        textAlign: 'center',
+        marginBottom: 15,
     },
     timeContainer: {
         flexDirection: 'row',
@@ -252,39 +297,103 @@ const styles = (colors) => StyleSheet.create({
     button: {
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 6,
+        borderRadius: 8,
     },
     buttonText: {
-        color: "#fff",
-        fontSize: 16,
+        ...typography.button(colors),
+        color: colors.white,
         fontWeight: 'bold',
     },
     timeText: {
-        fontSize: 16,
+        ...typography.body1(colors),
+        color: colors.text,
     },
-
-
-
-
     webCard: {
-        flexDirection: 'row',
+        width: "85%",
+        alignSelf: 'center',
+        flexDirection: 'column',
         backgroundColor: colors.background,
         borderRadius: 10,
         padding: 15,
         elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowColor: colors.background === "#000000" ? colors.white : colors.black,
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         marginVertical: 10,
         marginHorizontal: 20,
     },
     iconView: {
+        width: 100,
+        height: 100,
+        justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 10,
+        borderWidth: 0.75,
+        borderRadius: 10,
+    },
+    logo: {
+        width: 40,
+        height: 40,
     },
     text: {
+        textAlign: 'center',
+        ...typography.body1(colors),
         color: colors.text,
         marginTop: 10,
     },
-})
+    centeredView: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)'
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: colors.secondary,
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
+    },
+    modalText: {
+        marginBottom: 10,
+        textAlign: 'center',
+        ...typography.h3(colors),
+    },
+    input: {
+        ...typography.h6(colors),
+        borderWidth: 1,
+        borderColor: colors.textSecondary,
+        width: 250,
+        borderRadius: 10,
+        padding: 12,
+        color: colors.text,
+        marginVertical: 15,
+        backgroundColor: colors.background
+    },
+    buttonGroup: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        width: '100%',
+        paddingHorizontal: 20
+    },
+    bottomBackground: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: "6%",
+        backgroundColor: colors.primary,
+        borderTopLeftRadius: 100,
+    },
+});
