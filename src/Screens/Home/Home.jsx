@@ -155,7 +155,7 @@ const HomeScreen = () => {
             <View style={styles(colors).header}>
                 <Text style={styles(colors).headerContent}>Welcome, {name}</Text>
                 <TouchableOpacity onPress={() => logout()}>
-                    <Icon name="logout" size={24} color="white" />
+                    <Icon name="logout" size={22} color="white" />
                 </TouchableOpacity>
             </View>
 
@@ -257,17 +257,18 @@ const styles = (colors) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
+        height: '8%',
         justifyContent: 'space-between',
         backgroundColor: colors.primary,
         padding: 15,
         marginBottom: 20,
     },
     headerContent: {
-        ...typography.h3(colors),
+        ...typography.h5(colors),
         color: colors.white,
     },
     card: {
-        width: "85%",
+        width: "90%",
         alignSelf: 'center',
         backgroundColor: colors.background,
         padding: 20,
@@ -276,11 +277,11 @@ const styles = (colors) => StyleSheet.create({
         shadowColor: colors.background === "#000000" ? colors.white : colors.black,
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 2,
     },
     cardTitle: {
         textAlign: 'left',
@@ -309,20 +310,20 @@ const styles = (colors) => StyleSheet.create({
         color: colors.text,
     },
     webCard: {
-        width: "85%",
+        width: "90%",
         alignSelf: 'center',
         flexDirection: 'column',
         backgroundColor: colors.background,
         borderRadius: 10,
         padding: 15,
-        elevation: 3,
+        elevation: 2,
         shadowColor: colors.background === "#000000" ? colors.white : colors.black,
         shadowOffset: {
             width: 0,
             height: 2
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
         marginVertical: 10,
         marginHorizontal: 20,
     },
