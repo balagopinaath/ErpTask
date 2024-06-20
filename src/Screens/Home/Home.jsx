@@ -206,14 +206,16 @@ const HomeScreen = () => {
                         <Text style={styles(colors).text}>{userType === 'EMPLOYEE' ? "Task" : "ERP"}</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles(colors).iconView}
-                        onPress={() => {
-                            navigation.navigate('DriverActivities');
-                        }}>
-                        <Image source={userType === 'EMPLOYEE' ? require('../../../assets/images/clipboard.png') : require('../../../assets/images/analytics.png')} style={styles(colors).logo} />
-                        <Text style={styles(colors).text}>{userType === 'EMPLOYEE' ? "Driver" : "ERP"}</Text>
-                    </TouchableOpacity>
+                    {userType !== 'EMPLOYEE' && (
+                        <TouchableOpacity
+                            style={styles(colors).iconView}
+                            onPress={() => {
+                                navigation.navigate('DriverActivities');
+                            }}>
+                            <Image source={require('../../../assets/images/driver.png')} style={styles(colors).logo} />
+                            <Text style={styles(colors).text}>Driver Activities</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
 

@@ -1,5 +1,5 @@
-// const endPoint = "https://erpsmt.in/user/";
-const endPoint = "http://192.168.1.3:7001/user/";
+const endPoint = "https://erpsmt.in/user/";
+// const endPoint = "http://192.168.1.3:7001/user/";
 
 export const api = {
     getUserAuth: endPoint + "api/getUserByAuth?Auth=",
