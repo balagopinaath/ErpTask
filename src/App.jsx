@@ -9,7 +9,8 @@ import SplashScreen from './SplashScreen';
 import HomeScreen from './Screens/Home/Home';
 import LoginScreen from './Screens/Login/Login';
 import WebViewScreen from './Screens/Home/WebViewScreen';
-import DriverActivities from './DriverActivities/DriverActivities';
+import DriverActivities from './Activities/DriverActivities';
+import GodownActivities from './Activities/GodownActivities';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,7 +33,23 @@ const App = () => {
                     <Stack.Screen name="WebViewScreen" component={WebViewScreen} />
                     <Stack.Screen name="DriverActivities" component={DriverActivities}
                         options={{
-                            title: "Drivers Report",
+                            title: "Drivers Activities",
+                            headerShown: true,
+                            headerBlurEffect: true,
+                            headerStyle: {
+                                backgroundColor: colors.primary,
+                            },
+                            headerTintColor: colors.white,
+                            headerTitleStyle: {
+                                ...typography.h5(colors),
+                                fontWeight: '600',
+                                color: colors.white,
+                            }
+                        }} />
+
+                    <Stack.Screen name="GodownActivities" component={GodownActivities}
+                        options={{
+                            title: "Godown Activities",
                             headerShown: true,
                             headerBlurEffect: true,
                             headerStyle: {

@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList } from 'react-native';
 import { api } from '../Constants/api';
-import PagerView from 'react-native-pager-view';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Dropdown } from 'react-native-element-dropdown';
-import { useColorScheme } from 'react-native';
 import { customColors, typography } from '../Constants/helper';
-import { FlatList } from 'react-native';
 
 const DriverActivities = () => {
     const colorScheme = useColorScheme();
@@ -19,12 +17,13 @@ const DriverActivities = () => {
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [dropDownValue, setDropDownValue] = useState(1);
     const dropDownData = [
         { label: "MILL", value: 1 },
         { label: "GODOWN", value: 2 }
     ];
+    const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
     const [expandedDriverIndex, setExpandedDriverIndex] = useState(null);
+    const [expandedCategories, setExpandedCategories] = useState({});
 
     useEffect(() => {
         getDriverActivities(selectedDate.toISOString(), dropDownValue);
@@ -64,13 +63,6 @@ const DriverActivities = () => {
         }
     };
 
-    const formatDate = (date) => {
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
     const handleCategoryPress = (driverIndex, category) => {
         setSelectedCategories(prevState => ({
             ...prevState,
@@ -80,10 +72,18 @@ const DriverActivities = () => {
 
     const toggleDriverAccordion = (driverIndex) => {
         if (expandedDriverIndex === driverIndex) {
-            setExpandedDriverIndex(null); // Collapse the accordion if it's already expanded
+            setExpandedDriverIndex(null);
         } else {
-            setExpandedDriverIndex(driverIndex); // Expand the accordion for the selected driver
+            setExpandedDriverIndex(driverIndex);
         }
+    };
+
+    const calculateTotalTonnage = (tripDetails) => {
+        return tripDetails.reduce((total, detail) => {
+            return total + detail.Trips.reduce((subTotal, trip) => {
+                return subTotal + trip.TonnageValue;
+            }, 0);
+        }, 0);
     };
 
     const renderTripCategoryButtons = (driverIndex, locationGroups) => {
@@ -101,12 +101,24 @@ const DriverActivities = () => {
                         onPress={() => handleCategoryPress(driverIndex, group.TripCategory)}
                     >
                         <Text style={styles(colors).buttonText}>
-                            {group.TripCategory}
+                            {group.TripCategory} -
+                            <Text style={{ color: selectedCategories[driverIndex] === group.TripCategory ? colors.white : "red" }}> {calculateTotalTonnage(group.TripDetails)}</Text>
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
         );
+    };
+
+    const convertTo12HourFormat = (timeString) => {
+        const [hours, minutes, seconds] = timeString.split(':');
+
+        let hoursNum = parseInt(hours, 10);
+        const period = hoursNum >= 12 ? 'PM' : 'AM';
+        hoursNum = hoursNum % 12 || 12;
+        const formattedTime = `${hoursNum}:${minutes}:${seconds} ${period}`;
+
+        return formattedTime;
     };
 
     const renderTripDetails = (tripDetails) => {
@@ -118,13 +130,17 @@ const DriverActivities = () => {
                     <Text style={styles(colors).columnHeader}>Time</Text>
                 </View>
 
-                {tripDetails.map((detail) => (
-                    <View key={detail.TripNumber} style={styles(colors).tableRow}>
-                        <Text style={styles(colors).tableCell}>{detail.TripNumber}</Text>
-                        <Text style={styles(colors).tableCell}>{detail.Trips.length > 0 ? detail.Trips[0].TonnageValue : '-'}</Text>
-                        <Text style={styles(colors).tableCell}>{detail.Trips.length > 0 ? detail.Trips[0].EventTime : '-'}</Text>
-                    </View>
-                ))}
+                {tripDetails
+                    .filter(detail => detail.Trips.length > 0) // Filter out empty Trips
+                    .map((detail) => (
+                        <View key={detail.TripNumber} style={styles(colors).tableRow}>
+                            <Text style={styles(colors).tableCell}>{detail.TripNumber}</Text>
+                            <Text style={styles(colors).tableCell}>{detail.Trips[0].TonnageValue}</Text>
+                            <Text style={styles(colors).tableCell}>
+                                {convertTo12HourFormat(detail.Trips[0].EventTime)}
+                            </Text>
+                        </View>
+                    ))}
             </View>
         );
     };
@@ -160,8 +176,14 @@ const DriverActivities = () => {
                     style={styles(colors).accordionHeader}
                     onPress={() => toggleDriverAccordion(driverIndex)}
                 >
-                    <Text style={styles(colors).driverName}>{driver.DriverName}</Text>
-                    <Text style={styles(colors).driverSubTitle}>Tonnage: {totalTonnage.toFixed(2)}</Text>
+                    <View style={{ flexDirection: "row", marginRight: 10 }}>
+                        <Icon name="user-o" color={colors.accent} size={20} />
+                        <Text style={styles(colors).driverName}>{driver.DriverName}</Text>
+                    </View>
+                    <View style={{ flexDirection: "row" }}>
+                        <MaterialIcons name="weight-kilogram" color={colors.accent} size={20} />
+                        <Text style={styles(colors).driverSubTitle}> {totalTonnage.toFixed(2)}</Text>
+                    </View>
                 </TouchableOpacity>
                 {expandedDriverIndex === driverIndex && (
                     <View style={styles(colors).accordionContent}>
@@ -181,6 +203,24 @@ const DriverActivities = () => {
         );
     };
 
+    const overallTotals = useMemo(() => {
+        let totalTonnage = 0;
+        let totalTrips = 0;
+
+        organizedData.forEach(driver => {
+            driver.LocationGroup.forEach(group => {
+                group.TripDetails.forEach(detail => {
+                    detail.Trips.forEach(trip => {
+                        totalTonnage += parseFloat(trip.TonnageValue);
+                        totalTrips += 1;
+                    });
+                });
+            });
+        });
+
+        return { totalTonnage, totalTrips };
+    }, [organizedData]);
+
     return (
         <View style={styles(colors).container}>
             <View style={styles(colors).userPickContainer}>
@@ -189,7 +229,7 @@ const DriverActivities = () => {
                         <TextInput
                             maxFontSizeMultiplier={1.2}
                             style={styles(colors).textInput}
-                            value={selectedDate ? formatDate(selectedDate) : ''}
+                            value={`${selectedDate.getDate().toString().padStart(2, '0')}/${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}/${selectedDate.getFullYear()}`}
                             editable={false}
                         />
                         <Icon name="calendar" color={colors.accent} size={20} />
@@ -228,6 +268,15 @@ const DriverActivities = () => {
                     selectedTextStyle={styles(colors).selectedTextStyle}
                     iconStyle={styles(colors).iconStyle}
                 />
+            </View>
+
+            <View style={styles(colors).totalsContainer}>
+                <Text style={styles(colors).totalsText}>
+                    Total Tonnage: {overallTotals.totalTonnage.toFixed(2)}
+                </Text>
+                <Text style={styles(colors).totalsText}>
+                    Total Trips: {overallTotals.totalTrips}
+                </Text>
             </View>
 
             <FlatList
@@ -293,6 +342,19 @@ const styles = (colors) => StyleSheet.create({
         width: 20,
         height: 20,
     },
+    totalsContainer: {
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 10,
+        backgroundColor: colors.primary,
+        borderRadius: 5,
+        marginVertical: 10,
+    },
+    totalsText: {
+        ...typography.h6(colors),
+        color: colors.white,
+        fontWeight: 'bold',
+    },
     card: {
         width: "95%",
         alignSelf: "center",
@@ -300,14 +362,20 @@ const styles = (colors) => StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2
+            height: 1,
         },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 2,
         borderRadius: 8,
-        elevation: 5,
         padding: 10,
-        marginBottom: 20,
+        marginVertical: 10,
+    },
+    accordionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        height: 30,
+        alignItems: 'center',
     },
     driverInfo: {
         flexDirection: 'row',
@@ -328,21 +396,19 @@ const styles = (colors) => StyleSheet.create({
     },
     buttonContainer: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        marginVertical: 5,
+        justifyContent: "space-around",
+        marginVertical: 10,
     },
     tripCategoryButton: {
-        backgroundColor: colors.primary,
-        borderRadius: 30,
-
-        paddingVertical: 5,
-        paddingHorizontal: 15,
-        margin: 5,
+        flex: 0.4,
+        backgroundColor: colors.secondary,
+        paddingHorizontal: 8,
     },
     buttonText: {
-        ...typography.body2(colors),
-        color: colors.white
+        textAlign: "center",
+        justifyContent: "center",
+        ...typography.body1(colors),
+        color: colors.white,
     },
     table: {
         borderWidth: 0.75,

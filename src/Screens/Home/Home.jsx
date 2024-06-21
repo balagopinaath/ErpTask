@@ -195,26 +195,45 @@ const HomeScreen = () => {
             )}
 
             <View style={styles(colors).webCard}>
-                {/* {userType !== 'EMPLOYEE' && (<Text style={styles(colors).cardTitle}>ERP</Text>)} */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <TouchableOpacity
                         style={styles(colors).iconView}
                         onPress={() => {
                             navigation.navigate('WebViewScreen', { url: `https://erpsmt.in?Auth=${token}` });
                         }}>
-                        <Image source={userType === 'EMPLOYEE' ? require('../../../assets/images/clipboard.png') : require('../../../assets/images/analytics.png')} style={styles(colors).logo} />
+                        <Image source={userType === 'EMPLOYEE'
+                            ? require('../../../assets/images/clipboard.png')
+                            : require('../../../assets/images/analytics.png')}
+                            style={styles(colors).logo}
+                        />
                         <Text style={styles(colors).text}>{userType === 'EMPLOYEE' ? "Task" : "ERP"}</Text>
                     </TouchableOpacity>
 
                     {userType !== 'EMPLOYEE' && (
-                        <TouchableOpacity
-                            style={styles(colors).iconView}
-                            onPress={() => {
-                                navigation.navigate('DriverActivities');
-                            }}>
-                            <Image source={require('../../../assets/images/driver.png')} style={styles(colors).logo} />
-                            <Text style={styles(colors).text}>Driver Activities</Text>
-                        </TouchableOpacity>
+                        <React.Fragment>
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate('GodownActivities');
+                                }}>
+                                <Image
+                                    source={require('../../../assets/images/box.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Godown Activities</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate('DriverActivities');
+                                }}>
+                                <Image source={require('../../../assets/images/driver.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Driver Activities</Text>
+                            </TouchableOpacity>
+                        </React.Fragment>
                     )}
                 </View>
             </View>
@@ -339,8 +358,8 @@ const styles = (colors) => StyleSheet.create({
         marginHorizontal: 20,
     },
     iconView: {
-        width: 100,
-        height: 100,
+        width: 110,
+        height: 110,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 0.75,
