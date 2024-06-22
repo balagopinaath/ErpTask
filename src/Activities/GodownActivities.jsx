@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { customColors, typography } from '../Constants/helper';
 import { api } from '../Constants/api';
+import { Image } from 'react-native';
 
 const GodownActivities = () => {
     const colorScheme = useColorScheme();
@@ -31,10 +32,13 @@ const GodownActivities = () => {
         { label: "INWARD", value: 1 },
         { label: "MANAGEMENT", value: 2 },
         { label: "OUTWARD", value: 3 },
+        { label: "OG", value: 4 },
     ];
 
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [activeTab, setActiveTab] = useState(tabData[0].value);
+    const [expandedEntries, setExpandedEntries] = useState({});
+    const [expandedEntry, setExpandedEntry] = useState(false);
 
     useEffect(() => {
         getGodownActivities(fromDate.toISOString(), toDate.toISOString(), dropDownValue);
@@ -58,59 +62,111 @@ const GodownActivities = () => {
             const jsonData = await response.json();
 
             if (jsonData.success) {
-                setGodownData(jsonData.data);
+                const filteredData = jsonData.data.map(day => ({
+                    EntryDate: day.EntryDate,
+                    DayEntries: [day.DayEntries[0]]  // Only take the first entry for each day
+                }));
+
+                setGodownData(filteredData);
             }
         } catch (err) {
             console.log("Error fetching data:", err);
         }
     };
 
-    const formatDateTo12Hour = (dateString) => {
-        const date = new Date(dateString);
-        let hours = date.getHours();
-        const minutes = date.getMinutes();
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
-
-        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-        return `${hours}:${formattedMinutes} ${ampm}`;
+    const toggleEntry = (entryId) => {
+        setExpandedEntry(expandedEntry === entryId ? null : entryId);
     };
 
+    const calculateTotals = (data) => {
+        let totals = {
+            inward: 0,
+            management: 0,
+            outward: 0,
+            otherGodown: 0
+        };
+
+        let totalsForDay = {};
+
+        data.forEach(day => {
+            let dailyTotal = {
+                inward: 0,
+                management: 0,
+                outward: 0,
+                otherGodown: 0
+            };
+
+            day.DayEntries.forEach(entry => {
+                console.log(entry.PurchaseTotal)
+                dailyTotal.inward = entry.PurchaseTotal;
+                dailyTotal.management = entry.Handle + entry.WGChecking;
+                dailyTotal.outward = entry.SalesOnlyTotal;
+                dailyTotal.otherGodown = entry.SalesOtherGodown;
+
+                dailyTotal.inward = dailyTotal.inward.toFixed(2);
+                dailyTotal.management = dailyTotal.management.toFixed(2);
+                dailyTotal.outward = dailyTotal.outward.toFixed(2);
+                dailyTotal.otherGodown = dailyTotal.otherGodown.toFixed(2);
+
+                totalsForDay[day.EntryDate] = dailyTotal;
+
+                totals.inward += entry.PurchaseTotal;
+                totals.management += entry.Handle + entry.WGChecking;
+                totals.outward += entry.SalesOnlyTotal;
+                totals.otherGodown += entry.SalesOtherGodown;
+            });
+
+        });
+
+        totals.inward = totals.inward.toFixed(2);
+        totals.management = totals.management.toFixed(2);
+        totals.outward = totals.outward.toFixed(2);
+        totals.otherGodown = totals.otherGodown.toFixed(2);
+
+        return { totals, totalsForDay };
+    };
+
+    const { totals, totalsForDay } = calculateTotals(godownData);
 
     const renderItem = ({ item }) => {
         const isActive = activeAccordion === item.EntryDate;
+        const dailyTotal = totalsForDay[item.EntryDate];
+
         return (
             <View style={styles(colors).accordionContainer}>
+                {/* Header */}
                 <TouchableOpacity
                     style={styles(colors).accordionHeader}
                     onPress={() => setActiveAccordion(isActive ? null : item.EntryDate)}
                 >
-                    <View style={{ flexDirection: "row" }}>
-                        <Icon name="calendar-o" color={colors.accent} size={20} style={{ marginRight: 10 }} />
-                        <Text style={styles(colors).accordionHeaderText}>
-                            {new Date(item.EntryDate).toLocaleDateString()}
-                        </Text>
+                    {/* Display Date and Totals */}
+                    <View style={styles(colors).accordionView}>
+                        <View style={{ flexDirection: "row" }}>
+                            <Icon name="calendar-o" color={colors.accent} size={20} style={{ marginRight: 10 }} />
+                            <Text style={styles(colors).accordionHeaderText}>
+                                {new Date(item.EntryDate).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: '2-digit'
+                                }).slice(0, 5)}
+                            </Text>
+                        </View>
+                        <View style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignContent: "center"
+                        }}>
+                            <Text style={{ marginLeft: 30, marginRight: 30 }}>{dailyTotal.inward}</Text>
+                            <Text style={{ marginRight: 40 }}>{dailyTotal.management}</Text>
+                            <Text style={{ marginRight: 40 }}>{dailyTotal.outward}</Text>
+                            <Text>{dailyTotal.otherGodown}</Text>
+                        </View>
                     </View>
-                    {item.DayEntries
-                        .reduce((uniqueEntries, entry) => {
-                            if (!uniqueEntries.some(e => e.EntryDate === entry.EntryDate)) {
-                                uniqueEntries.push(entry);
-                            }
-                            return uniqueEntries;
-                        }, [])
-                        .map(entry => (
-                            <View key={entry.Id} style={{ flexDirection: "row" }}>
-                                <MaterialIcons name="weight-kilogram" color={colors.accent} size={20} />
-                                <Text style={{ ...typography.h6(colors), marginLeft: 5 }}>{entry.PurchaseTotal}</Text>
-                            </View>
-                        ))
-                    }
                 </TouchableOpacity>
+
+                {/* Expanded Content */}
                 {isActive && (
                     <View style={styles(colors).accordionContent}>
+                        {/* Tabs */}
                         <View style={styles(colors).tabContainer}>
                             {tabData.map(tab => (
                                 <TouchableOpacity
@@ -128,65 +184,87 @@ const GodownActivities = () => {
                                 </TouchableOpacity>
                             ))}
                         </View>
+
+                        {/* Day Entries */}
                         {item.DayEntries.map(entry => {
+                            const isEntryExpanded = expandedEntries[entry.Id];
+
                             return (
                                 <View key={entry.Id} style={styles(colors).dayEntry}>
-                                    {activeTab === 1 && (
-                                        <View style={styles(colors).card}>
-                                            <Text style={[styles(colors).cardTitle, {}]}>Entry Time: {formatDateTo12Hour(entry.EntryAt)}</Text>
-                                            <Text style={styles(colors).cardTitle}>TOTAL:
-                                                <Text style={styles(colors).cardText}> {entry.PurchaseTotal}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Purchase:
-                                                <Text style={styles(colors).cardText}> {entry.Purchase}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Godown:
-                                                <Text style={styles(colors).cardText}> {entry.OtherGodown}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Transfer:
-                                                <Text style={styles(colors).cardText}> {entry.PurchaseTransfer} </Text>
-                                            </Text>
-                                        </View>
-                                    )}
-                                    {activeTab === 2 && (
-                                        <View style={styles(colors).card}>
-                                            <Text style={styles(colors).cardTitle}>Entry Time: {formatDateTo12Hour(entry.EntryAt)}</Text>
-                                            <Text style={styles(colors).cardTitle}>Handle:
-                                                <Text style={styles(colors).cardText}> {entry.Handle}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>WGChecking:
-                                                <Text style={styles(colors).cardText}> {entry.WGChecking}</Text>
-                                            </Text>
-                                        </View>
-                                    )}
-                                    {activeTab === 3 && (
-                                        <View style={styles(colors).card}>
-                                            <Text style={styles(colors).cardTitle}>Entry Time: {formatDateTo12Hour(entry.EntryAt)}</Text>
-                                            <Text style={styles(colors).cardTitle}>Total:
-                                                <Text style={styles(colors).cardText}> {entry.SalesTotal} </Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Sales Total:
-                                                <Text style={styles(colors).cardText}> {entry.SalesOnlyTotal}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Lorry Shed:
-                                                <Text style={styles(colors).cardText}> {entry.LorryShed}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Vandi Varam:
-                                                <Text style={styles(colors).cardText}> {entry.VandiVarum}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>DD Sales:
-                                                <Text style={styles(colors).cardText}> {entry.DDSales}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Transfer:
-                                                <Text style={styles(colors).cardText}> {entry.SalesTransfer}</Text>
-                                            </Text>
-                                            <Text style={styles(colors).cardTitle}>Other Godown:
-                                                <Text style={styles(colors).cardText}> {entry.SalesOtherGodown}</Text>
-                                            </Text>
-                                        </View>
-                                    )}
+                                    <View style={styles(colors).entryContent}>
+                                        {activeTab === 1 && (
+                                            <View style={styles(colors).card}>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Purchase</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.Purchase}</Text>
+                                                </View>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Godown</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.OtherGodown}</Text>
+                                                </View>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Transfer</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.PurchaseTransfer}</Text>
+                                                </View>
+                                            </View>
+                                        )}
+                                        {activeTab === 2 && (
+                                            <View style={styles(colors).card}>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Handle</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.Handle}</Text>
+                                                </View>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>WGChecking</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.WGChecking}</Text>
+                                                </View>
+                                            </View>
+                                        )}
+                                        {activeTab === 3 && (
+                                            <View style={styles(colors).card}>
+                                                <View style={styles(colors).row}>
+                                                    <TouchableOpacity onPress={() => toggleEntry(entry.Id)} >
+                                                        <Text style={[styles(colors).rowCardTitle, { color: colors.accent }]}>Sales Total</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity onPress={() => toggleEntry(entry.Id)} >
+                                                        <Text style={[styles(colors).rowCardText, { color: colors.accent }]}>{entry.SalesOnlyTotal}</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+
+                                                {expandedEntry === entry.Id && (
+                                                    <View style={styles(colors).details}>
+                                                        <View style={styles(colors).row}>
+                                                            <Text style={styles(colors).rowCardTitle}>Lorry Shed</Text>
+                                                            <Text style={styles(colors).rowCardText}>{entry.LorryShed}</Text>
+                                                        </View>
+                                                        <View style={styles(colors).row}>
+                                                            <Text style={styles(colors).rowCardTitle}>Vandi Varam</Text>
+                                                            <Text style={styles(colors).rowCardText}>{entry.VandiVarum}</Text>
+                                                        </View>
+                                                        <View style={styles(colors).row}>
+                                                            <Text style={styles(colors).rowCardTitle}>DD Sales</Text>
+                                                            <Text style={styles(colors).rowCardText}>{entry.DDSales}</Text>
+                                                        </View>
+                                                    </View>
+                                                )}
+
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Transfer</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.SalesTransfer}</Text>
+                                                </View>
+                                            </View>
+                                        )}
+                                        {activeTab === 4 && (
+                                            <View style={styles(colors).card}>
+                                                <View style={styles(colors).row}>
+                                                    <Text style={styles(colors).rowCardTitle}>Other Godown</Text>
+                                                    <Text style={styles(colors).rowCardText}>{entry.SalesOtherGodown}</Text>
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
                                 </View>
-                            )
+                            );
                         })}
                     </View>
                 )}
@@ -194,47 +272,52 @@ const GodownActivities = () => {
         );
     };
 
-
     return (
         <View style={styles(colors).container}>
             <View style={styles(colors).userPickContainer}>
-                <View style={styles(colors).datePickerWrapper}>
-                    <TouchableOpacity style={styles(colors).datePicker} onPress={() => setShowFromPicker(true)}>
-                        <TextInput
-                            maxFontSizeMultiplier={1.2}
-                            style={styles(colors).textInput}
-                            value={`${fromDate.getDate().toString().padStart(2, '0')}/${(fromDate.getMonth() + 1).toString().padStart(2, '0')}/${fromDate.getFullYear()}`}
-                            editable={false}
+                <TouchableOpacity
+                    style={styles(colors).datePicker}
+                    onPress={() => setShowFromPicker(true)}
+                >
+                    <TextInput
+                        maxFontSizeMultiplier={1.2}
+                        style={styles(colors).textInput}
+                        value={`${fromDate.getDate().toString().padStart(2, '0')}/${(fromDate.getMonth() + 1).toString().padStart(2, '0')}/${fromDate.getFullYear()}`}
+                        editable={false}
+                    />
+                    <Icon name="calendar" color={colors.accent} size={20} />
+                    {showFromPicker && (
+                        <DateTimePicker
+                            testID="toDatePicker"
+                            is24Hour={true}
+                            value={fromDate}
+                            mode="date"
+                            display="default"
+                            onChange={onFromDateChange}
                         />
-                        <Icon name="calendar" color={colors.accent} size={20} />
-                        {showFromPicker && (
-                            <DateTimePicker
-                                value={fromDate}
-                                mode="date"
-                                display="default"
-                                onChange={onFromDateChange}
-                            />
-                        )}
-                    </TouchableOpacity>
+                    )}
+                </TouchableOpacity>
 
-                    <TouchableOpacity style={styles(colors).datePicker} onPress={() => setShowToPicker(true)}>
-                        <TextInput
-                            maxFontSizeMultiplier={1.2}
-                            style={styles(colors).textInput}
-                            value={`${toDate.getDate().toString().padStart(2, '0')}/${(toDate.getMonth() + 1).toString().padStart(2, '0')}/${toDate.getFullYear()}`}
-                            editable={false}
+                <TouchableOpacity
+                    style={styles(colors).datePicker}
+                    onPress={() => setShowToPicker(true)}
+                >
+                    <TextInput
+                        maxFontSizeMultiplier={1.2}
+                        style={styles(colors).textInput}
+                        value={`${toDate.getDate().toString().padStart(2, '0')}/${(toDate.getMonth() + 1).toString().padStart(2, '0')}/${toDate.getFullYear()}`}
+                        editable={false}
+                    />
+                    <Icon name="calendar" color={colors.accent} size={20} />
+                    {showToPicker && (
+                        <DateTimePicker
+                            value={toDate}
+                            mode="date"
+                            display="default"
+                            onChange={onToDateChange}
                         />
-                        <Icon name="calendar" color={colors.accent} size={20} />
-                        {showToPicker && (
-                            <DateTimePicker
-                                value={toDate}
-                                mode="date"
-                                display="default"
-                                onChange={onToDateChange}
-                            />
-                        )}
-                    </TouchableOpacity>
-                </View>
+                    )}
+                </TouchableOpacity>
                 <Dropdown
                     data={dropDownData}
                     value={dropDownValue}
@@ -259,6 +342,40 @@ const GodownActivities = () => {
                 />
             </View>
 
+            <View style={styles(colors).totalsContainer}>
+                <View style={styles(colors).rowContainer}>
+                    <View style={styles(colors).totalsInnerContainer}>
+                        <Text style={styles(colors).totalsText}>Inwards </Text>
+                        <Text style={styles(colors).totalsText}>{totals.inward}</Text>
+                    </View>
+
+                    <View style={styles(colors).totalsInnerContainer}>
+                        <Text style={styles(colors).totalsText}>Management </Text>
+                        <Text style={styles(colors).totalsText}>{totals.management}</Text>
+                    </View>
+                </View>
+
+                <View style={styles(colors).rowContainer}>
+                    <View style={styles(colors).totalsInnerContainer}>
+                        <Text style={styles(colors).totalsText}>Outward </Text>
+                        <Text style={styles(colors).totalsText}>{totals.outward}</Text>
+                    </View>
+
+                    <View style={styles(colors).totalsInnerContainer}>
+                        <Text style={styles(colors).totalsText}>OG</Text>
+                        <Text style={styles(colors).totalsText}>{totals.otherGodown}</Text>
+                    </View>
+                </View>
+            </View>
+
+            <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 10 }}>
+                <Text style={{ flex: 1, textAlign: "center" }}></Text>
+                <Text style={{ flex: 1, textAlign: "center" }}>Inwards</Text>
+                <Text style={{ flex: 1, textAlign: "center" }}>MG</Text>
+                <Text style={{ flex: 1, textAlign: "center" }}>Outwards</Text>
+                <Text style={{ flex: 1, textAlign: "center" }}>OG</Text>
+            </View>
+
             <FlatList
                 data={godownData}
                 renderItem={renderItem}
@@ -278,36 +395,32 @@ const styles = (colors) => StyleSheet.create({
         padding: 10,
     },
     userPickContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         marginBottom: 20,
     },
-    datePickerWrapper: {
-        flexDirection: "row",
-        justifyContent: "space-between"
-    },
     datePicker: {
-        width: "45%",
+        flex: 3.33,
+        height: 50,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.secondary,
         borderWidth: 1,
         borderColor: "#ddd",
         borderRadius: 5,
-        paddingHorizontal: 10,
+        paddingHorizontal: 5,
     },
     textInput: {
-        flex: 1,
         ...typography.body1(colors),
     },
     dropdown: {
-        alignSelf: "center",
-        width: "80%",
+        flex: 3.33,
         height: 50,
         borderColor: '#ddd',
         borderWidth: 0.5,
         borderRadius: 8,
         paddingHorizontal: 8,
         backgroundColor: colors.secondary,
-        marginVertical: 20
     },
     dropdownContainer: {
         backgroundColor: colors.secondary,
@@ -325,6 +438,32 @@ const styles = (colors) => StyleSheet.create({
         width: 20,
         height: 20,
     },
+    totalsContainer: {
+        flexDirection: 'column',
+        justifyContent: "center",
+        paddingVertical: 10,
+    },
+    rowContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    totalsInnerContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: "center",
+        alignItems: 'center',
+        backgroundColor: colors.secondary,
+        padding: 10,
+        marginRight: 10,
+        borderColor: colors.primary,
+        borderWidth: 1,
+        borderRadius: 5
+    },
+    totalsText: {
+        fontSize: 16,
+        color: colors.text,
+    },
 
 
     listContainer: {
@@ -332,6 +471,10 @@ const styles = (colors) => StyleSheet.create({
     },
     accordionContainer: {
         marginBottom: 10,
+        borderWidth: 1,
+        borderColor: colors.secondary,
+        marginHorizontal: 5,
+        borderRadius: 10
     },
     accordionHeader: {
         flexDirection: 'row',
@@ -341,10 +484,28 @@ const styles = (colors) => StyleSheet.create({
         backgroundColor: colors.card,
         borderRadius: 5,
     },
+    accordionView: {
+        flexDirection: "row"
+    },
     accordionHeaderText: {
         ...typography.body1(colors),
         fontWeight: 'bold',
         color: colors.text,
+    },
+    dayEntry: {
+        flexDirection: "column",
+        padding: 10,
+        // borderBottomWidth: 1,
+        // borderBottomColor: colors.border,
+    },
+    entryHeader: {
+        flexDirection: 'row',
+        // alignContent: 'center',
+        // alignItems: 'center',
+        paddingVertical: 10,
+    },
+    entryContent: {
+        paddingLeft: 20,
     },
     accordionContent: {
         padding: 15,
@@ -373,11 +534,44 @@ const styles = (colors) => StyleSheet.create({
     activeTabText: {
         color: colors.text,
     },
-    dayEntry: {
-        flexDirection: "column",
+    tableContainer: {
+        margin: 10,
         padding: 10,
+        backgroundColor: colors.tableBackground,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: colors.tableBorder,
+    },
+    tableRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         // borderBottomWidth: 1,
-        // borderBottomColor: colors.border,
+        // borderBottomColor: colors.rowBorder,
+        paddingVertical: 10,
+    },
+    tableHeader: {
+        flex: 1,
+        fontWeight: 'bold',
+        color: colors.headerText,
+        textAlign: 'center',
+    },
+    tableCell: {
+        flex: 1,
+        padding: 5,
+        textAlign: 'center',
+    },
+    tableText: {
+        color: colors.cellText,
+        textAlign: 'center',
+    },
+    details: {
+        marginTop: 10,
+        paddingLeft: 5,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.accent,
+    },
+    detailText: {
+        color: colors.detailText,
     },
 
     card: {
@@ -393,6 +587,22 @@ const styles = (colors) => StyleSheet.create({
         shadowOpacity: 0.22,
         shadowRadius: 2.22,
         elevation: 2,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    rowCardTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.text,
+        marginRight: 10,
+    },
+    rowCardText: {
+        fontSize: 16,
+        color: colors.text,
     },
     cardTitle: {
         ...typography.h6(colors),

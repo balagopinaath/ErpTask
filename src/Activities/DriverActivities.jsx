@@ -206,13 +206,18 @@ const DriverActivities = () => {
     const overallTotals = useMemo(() => {
         let totalTonnage = 0;
         let totalTrips = 0;
+        const tripsPerDay = {};
 
         organizedData.forEach(driver => {
             driver.LocationGroup.forEach(group => {
                 group.TripDetails.forEach(detail => {
                     detail.Trips.forEach(trip => {
-                        totalTonnage += parseFloat(trip.TonnageValue);
-                        totalTrips += 1;
+                        if (detail.TripNumber !== 0) { // Skip trips with TripNumber 0
+                            detail.Trips.forEach(trip => {
+                                totalTonnage += parseFloat(trip.TonnageValue);
+                                totalTrips += 1;
+                            });
+                        }
                     });
                 });
             });
