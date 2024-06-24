@@ -4,8 +4,10 @@ import { api } from '../Constants/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
 import { customColors, typography } from '../Constants/helper';
+import { Image } from 'react-native';
 
 const DriverActivities = () => {
     const colorScheme = useColorScheme();
@@ -13,7 +15,8 @@ const DriverActivities = () => {
     const colors = customColors[isDarkMode ? 'dark' : 'light'];
 
     const [organizedData, setOrganizedData] = useState([]);
-    const [selectedCategories, setSelectedCategories] = useState({});
+    const [expandedDriver, setExpandedDriver] = useState(false);
+    const [expandedTrip, setExpandedTrip] = useState(false);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -22,8 +25,6 @@ const DriverActivities = () => {
         { label: "GODOWN", value: 2 }
     ];
     const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
-    const [expandedDriverIndex, setExpandedDriverIndex] = useState(null);
-    const [expandedCategories, setExpandedCategories] = useState({});
 
     useEffect(() => {
         getDriverActivities(selectedDate.toISOString(), dropDownValue);
@@ -31,7 +32,7 @@ const DriverActivities = () => {
 
     const getDriverActivities = async (date, dropValue) => {
         try {
-            const response = await fetch(api.getDriverActivities(date, dropValue));
+            const response = await fetch(api.getDriverTripBasedActivities(date, dropValue));
             const jsonData = await response.json();
 
             if (jsonData.success) {
@@ -41,16 +42,6 @@ const DriverActivities = () => {
             console.log("Error fetching data:", err);
         }
     };
-
-    useEffect(() => {
-        const initialSelectedTabs = {};
-        const initialSelectedCategories = {};
-        organizedData.forEach((driver, index) => {
-            initialSelectedTabs[index] = 0; // Initialize each driver with the first tab selected
-            initialSelectedCategories[index] = null; // Initialize each driver with no category selected
-        });
-        setSelectedCategories(initialSelectedCategories);
-    }, [organizedData]);
 
     const showDatepicker = () => {
         setShowDatePicker(true);
@@ -63,51 +54,12 @@ const DriverActivities = () => {
         }
     };
 
-    const handleCategoryPress = (driverIndex, category) => {
-        setSelectedCategories(prevState => ({
-            ...prevState,
-            [driverIndex]: category
-        }));
+    const toggleDriverExpand = (driverName) => {
+        setExpandedDriver(expandedDriver === driverName ? null : driverName);
     };
 
-    const toggleDriverAccordion = (driverIndex) => {
-        if (expandedDriverIndex === driverIndex) {
-            setExpandedDriverIndex(null);
-        } else {
-            setExpandedDriverIndex(driverIndex);
-        }
-    };
-
-    const calculateTotalTonnage = (tripDetails) => {
-        return tripDetails.reduce((total, detail) => {
-            return total + detail.Trips.reduce((subTotal, trip) => {
-                return subTotal + trip.TonnageValue;
-            }, 0);
-        }, 0);
-    };
-
-    const renderTripCategoryButtons = (driverIndex, locationGroups) => {
-        return (
-            <View style={styles(colors).buttonContainer}>
-                {locationGroups.map((group, groupIndex) => (
-                    <TouchableOpacity
-                        key={groupIndex}
-                        style={[styles(colors).tripCategoryButton, {
-                            backgroundColor:
-                                selectedCategories[driverIndex] === group.TripCategory
-                                    ? colors.accent
-                                    : colors.primary,
-                        }]}
-                        onPress={() => handleCategoryPress(driverIndex, group.TripCategory)}
-                    >
-                        <Text style={styles(colors).buttonText}>
-                            {group.TripCategory} -
-                            <Text style={{ color: selectedCategories[driverIndex] === group.TripCategory ? colors.white : "red" }}> {calculateTotalTonnage(group.TripDetails)}</Text>
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        );
+    const toggleTripExpand = (tripNumber) => {
+        setExpandedTrip(expandedTrip === tripNumber ? null : tripNumber);
     };
 
     const convertTo12HourFormat = (timeString) => {
@@ -116,115 +68,99 @@ const DriverActivities = () => {
         let hoursNum = parseInt(hours, 10);
         const period = hoursNum >= 12 ? 'PM' : 'AM';
         hoursNum = hoursNum % 12 || 12;
-        const formattedTime = `${hoursNum}:${minutes}:${seconds} ${period}`;
+        const formattedTime = `${hoursNum}:${minutes} ${period}`;
 
         return formattedTime;
     };
 
-    const renderTripDetails = (tripDetails) => {
-        return (
-            <View style={styles(colors).table}>
-                <View style={[styles(colors).tableRow, styles(colors).tableHeader]}>
-                    <Text style={styles(colors).columnHeader}>Trip Number</Text>
-                    <Text style={styles(colors).columnHeader}>Tonnage</Text>
-                    <Text style={styles(colors).columnHeader}>Time</Text>
-                </View>
+    const renderDriverItem = ({ item }) => {
+        const totalDriverTonnage = item.Trips.reduce((sum, trip) => {
+            return sum + trip.Categories.reduce((catSum, cat) => catSum + cat.TonnageValue, 0);
+        }, 0);
 
-                {tripDetails
-                    .filter(detail => detail.Trips.length > 0) // Filter out empty Trips
-                    .map((detail) => (
-                        <View key={detail.TripNumber} style={styles(colors).tableRow}>
-                            <Text style={styles(colors).tableCell}>{detail.TripNumber}</Text>
-                            <Text style={styles(colors).tableCell}>{detail.Trips[0].TonnageValue}</Text>
-                            <Text style={styles(colors).tableCell}>
-                                {convertTo12HourFormat(detail.Trips[0].EventTime)}
-                            </Text>
-                        </View>
-                    ))}
-            </View>
-        );
-    };
-
-    const renderDriverCard = ({ item: driver, index: driverIndex }) => {
-        const selectedCategory = selectedCategories[driverIndex];
-
-        let totalTonnage = 0;
-        driver.LocationGroup.forEach(group => {
-            group.TripDetails.forEach(detail => {
-                detail.Trips.forEach(trip => {
-                    totalTonnage += parseFloat(trip.TonnageValue);
-                });
-            });
-        });
-
-        let categoryTonnage = 0;
-        if (selectedCategory) {
-            driver.LocationGroup.forEach(group => {
-                if (group.TripCategory === selectedCategory) {
-                    group.TripDetails.forEach(detail => {
-                        detail.Trips.forEach(trip => {
-                            categoryTonnage += parseFloat(trip.TonnageValue);
-                        });
-                    });
-                }
-            });
-        }
+        const totalDriverTrips = item.Trips.length;
+        // console.log(totalDriverTrips)
 
         return (
-            <View key={driverIndex} style={styles(colors).card}>
-                <TouchableOpacity
+            <View key={item.DriverName}>
+                <TouchableOpacity onPress={() => toggleDriverExpand(item.DriverName)}
                     style={styles(colors).accordionHeader}
-                    onPress={() => toggleDriverAccordion(driverIndex)}
                 >
-                    <View style={{ flexDirection: "row", marginRight: 10 }}>
-                        <Icon name="user-o" color={colors.accent} size={20} />
-                        <Text style={styles(colors).driverName}>{driver.DriverName}</Text>
+                    <View style={styles(colors).accordionHeaderView}>
+                        <Icon name='user-o' size={25} color={colors.accent} />
+                        <Text style={styles(colors).headerText}>{item.DriverName}</Text>
                     </View>
-                    <View style={{ flexDirection: "row" }}>
-                        <MaterialIcons name="weight-kilogram" color={colors.accent} size={20} />
-                        <Text style={styles(colors).driverSubTitle}> {totalTonnage.toFixed(2)}</Text>
+                    <View style={styles(colors).accordionHeaderView}>
+                        <MaterialIcons name='weight' size={25} color={colors.accent} />
+                        <Text style={styles(colors).tonnageText}> {totalDriverTonnage.toFixed(2)}</Text>
                     </View>
                 </TouchableOpacity>
-                {expandedDriverIndex === driverIndex && (
-                    <View style={styles(colors).accordionContent}>
-                        {renderTripCategoryButtons(driverIndex, driver.LocationGroup)}
-                        <FlatList
-                            data={driver.LocationGroup.filter(group => group.TripCategory === selectedCategory)}
-                            keyExtractor={(item, index) => index.toString()}
-                            renderItem={({ item }) => (
-                                <View>
-                                    {renderTripDetails(item.TripDetails)}
+                {expandedDriver === item.DriverName && (
+                    <View>
+                        {item.Trips.map((trip, index) => {
+                            const totalTripTonnage = trip.Categories.reduce((catSum, cat) => catSum + cat.TonnageValue, 0);
+
+                            return (
+                                <View key={index}>
+                                    <TouchableOpacity
+                                        onPress={() => toggleTripExpand(trip.TripNumber)}
+                                        style={styles(colors).accordionSubHeader}
+                                    >
+                                        <View style={styles(colors).accordionSubHeaderView}>
+                                            <View style={{ flexDirection: "row", justifyContent: "flex-start" }}>
+                                                <AntDesign name={expandedTrip === trip.TripNumber ? "minus" : "plus"} size={20} color={colors.accent} />
+                                                <Text style={styles(colors).subTitle}>
+                                                    Trip Number: {trip.TripNumber} {' '}
+                                                    <Text style={[styles(colors).subTitle, { color: colors.accent }]}>({totalTripTonnage.toFixed(2)})</Text>
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                    {expandedTrip === trip.TripNumber && (
+                                        <View style={styles(colors).accordionContent}>
+                                            {trip.Categories.map((category, catIndex) => (
+                                                <View key={catIndex} style={styles(colors).tripDetails}>
+                                                    <View style={styles(colors).rows}>
+                                                        <Icon name='building-o' size={20} color={colors.accent} style={{ marginRight: 10 }} />
+                                                        <Text style={[styles(colors).labelText, { flex: 0.8 }]}>{category.TripCategory}</Text>
+                                                    </View>
+                                                    <View style={styles(colors).rows}>
+                                                        <MaterialIcons name='weight' size={20} color={colors.accent} style={{ marginRight: 5 }} />
+                                                        <Text style={styles(colors).labelText}>{category.TonnageValue}</Text>
+
+                                                        <MaterialIcons name='clock-time-five-outline' size={20} color={colors.accent} style={{ marginLeft: 10, marginRight: 5 }} />
+                                                        <Text style={styles(colors).labelText}>{convertTo12HourFormat(category.EventTime)}</Text>
+                                                    </View>
+                                                    <View style={styles(colors).rows}>
+
+                                                    </View>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    )}
                                 </View>
-                            )}
-                        />
+                            );
+                        })}
                     </View>
                 )}
             </View>
         );
     };
 
-    const overallTotals = useMemo(() => {
-        let totalTonnage = 0;
-        let totalTrips = 0;
-        const tripsPerDay = {};
+    const totals = () => {
+        const totalTrips = organizedData.reduce((acc, driver) => acc + driver.Trips.length, 0);
+        const totalTonnageValue = organizedData.reduce((acc, driver) => {
+            return acc + driver.Trips.reduce((accTrips, trip) => accTrips + trip.Categories.reduce((accCategories, category) => accCategories + category.TonnageValue, 0), 0);
+        }, 0);
+        const totalDrivers = organizedData.length;
 
-        organizedData.forEach(driver => {
-            driver.LocationGroup.forEach(group => {
-                group.TripDetails.forEach(detail => {
-                    detail.Trips.forEach(trip => {
-                        if (detail.TripNumber !== 0) { // Skip trips with TripNumber 0
-                            detail.Trips.forEach(trip => {
-                                totalTonnage += parseFloat(trip.TonnageValue);
-                                totalTrips += 1;
-                            });
-                        }
-                    });
-                });
-            });
-        });
+        return { totalTrips, totalTonnageValue, totalDrivers };
+        // console.log('Total number of trips:', totalTrips);
+        // console.log('Total TonnageValue:', totalTonnageValue.toFixed(2));
+        // console.log('Number of drivers:', totalDrivers);
+    }
 
-        return { totalTonnage, totalTrips };
-    }, [organizedData]);
+    const { totalTrips, totalTonnageValue, totalDrivers } = totals();
 
     return (
         <View style={styles(colors).container}>
@@ -275,20 +211,40 @@ const DriverActivities = () => {
                 />
             </View>
 
-            <View style={styles(colors).totalsContainer}>
-                <Text style={styles(colors).totalsText}>
-                    Total Tonnage: {overallTotals.totalTonnage.toFixed(2)}
-                </Text>
-                <Text style={styles(colors).totalsText}>
-                    Total Trips: {overallTotals.totalTrips}
-                </Text>
+            <View style={styles(colors).overViewCard}>
+                <View style={styles(colors).overViewInner}>
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require('../../assets/images/driver.png')}
+                    />
+                    <Text style={styles(colors).overViewInnerText}>{totalDrivers}</Text>
+                </View>
+
+                <View style={styles(colors).overViewInner}>
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require('../../assets/images/pick-up.png')}
+                    />
+                    <Text style={styles(colors).overViewInnerText}>{totalTrips}</Text>
+                </View>
+
+                <View style={styles(colors).overViewInner}>
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require('../../assets/images/measure.png')}
+                    />
+                    <Text style={styles(colors).overViewInnerText}>{totalTonnageValue.toFixed(2)}</Text>
+                </View>
             </View>
 
             <FlatList
                 data={organizedData}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={renderDriverCard}
+                renderItem={renderDriverItem}
+                keyExtractor={(item) => item.DriverName}
             />
+
+
+
         </View>
     );
 };
@@ -347,18 +303,24 @@ const styles = (colors) => StyleSheet.create({
         width: 20,
         height: 20,
     },
-    totalsContainer: {
-        justifyContent: "center",
+    overViewCard: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
-        padding: 10,
-        backgroundColor: colors.primary,
-        borderRadius: 5,
-        marginVertical: 10,
+        margin: 25,
     },
-    totalsText: {
-        ...typography.h6(colors),
-        color: colors.white,
-        fontWeight: 'bold',
+    overViewInner: {
+        justifyContent: "center",
+        alignContent: "center",
+        borderWidth: 2,
+        borderColor: colors.secondary,
+        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+    overViewInnerText: {
+        textAlign: "center",
+        ...typography.h4(colors)
     },
     card: {
         width: "95%",
@@ -376,12 +338,12 @@ const styles = (colors) => StyleSheet.create({
         padding: 10,
         marginVertical: 10,
     },
-    accordionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        height: 30,
-        alignItems: 'center',
-    },
+    // accordionHeader: {
+    // flexDirection: 'row',
+    // justifyContent: 'space-between',
+    // height: 30,
+    // alignItems: 'center',
+    // },
     driverInfo: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -449,6 +411,87 @@ const styles = (colors) => StyleSheet.create({
         justifyContent: 'center',
     },
 
+    noDataContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    noDataText: {
+        fontSize: 16,
+        color: colors.text,
+    },
+
+
+    accordionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: colors.background,
+        borderRadius: 10,
+        marginVertical: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 2,
+        marginHorizontal: 10
+    },
+    accordionHeaderView: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    headerText: {
+        ...typography.h6(colors),
+        marginLeft: 10
+    },
+    tonnageText: {
+        ...typography.body1(colors),
+        fontWeight: 'bold',
+        color: colors.accent,
+    },
+    accordionSubHeader: {
+        // alignItems: 'center',
+        marginVertical: 5,
+    },
+    accordionSubHeaderView: {
+        flexDirection: "column",
+        justifyContent: "space-evenly",
+        alignItems: "center",
+    },
+
+    accordionContent: {
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        alignItems: "center",
+        padding: 10,
+        // marginBottom: 5,
+    },
+    tripDetails: {
+        width: "45%",
+        borderWidth: 0.75,
+        borderColor: colors.primary,
+        backgroundColor: colors.secondary,
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 10,
+        marginHorizontal: 15
+    },
+    rows: {
+        flexDirection: 'row',
+    },
+    labelText: {
+        ...typography.body1(colors),
+        flexWrap: "wrap",
+        // marginLeft: 15,
+        // marginBottom: 10
+    },
+    subTitle: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+    },
 
 });
 

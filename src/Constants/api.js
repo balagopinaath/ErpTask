@@ -10,6 +10,9 @@ export const api = {
 
     getDrivers: endPoint + "api/driverActivities/drivers",
     getDriverActivities: (reqDate, reqLocation) => `${endPoint}api/driverActivities?reqDate=${reqDate}&reqLocation=${reqLocation}`,
+    getDriverTripBasedActivities: (fromDate, reqLocation) => `${endPoint}api/driverActivities/tripBased?reqDate=${fromDate}&reqLocation=${reqLocation}`,
 
-    getGodownActivities: (fromDate, toDate, reqLocation) => `${endPoint}api/godownActivities?Fromdate=${fromDate}&Todate=${toDate}&LocationDetails=${reqLocation}`
+    getGodownActivities: (fromDate, toDate, reqLocation) => `${endPoint}api/godownActivities?Fromdate=${fromDate}&Todate=${toDate}&LocationDetails=${reqLocation}`,
+
+    getDeliveryActivities: (fromDate, reqLocation) => `${endPoint}api/deliveryActivities?reqDate=${fromDate}&reqLocation=${reqLocation}`,
 }

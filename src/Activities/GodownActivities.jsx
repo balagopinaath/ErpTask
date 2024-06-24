@@ -6,7 +6,6 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { customColors, typography } from '../Constants/helper';
 import { api } from '../Constants/api';
-import { Image } from 'react-native';
 
 const GodownActivities = () => {
     const colorScheme = useColorScheme();
@@ -17,8 +16,8 @@ const GodownActivities = () => {
 
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const [fromDate, setFromDate] = useState(firstDayOfMonth);
-    const [toDate, setToDate] = useState(new Date());
+    const [fromDate, setFromDate] = useState(currentDate);
+    const [toDate, setToDate] = useState(currentDate);
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showToPicker, setShowToPicker] = useState(false);
 
@@ -32,12 +31,10 @@ const GodownActivities = () => {
         { label: "INWARD", value: 1 },
         { label: "MANAGEMENT", value: 2 },
         { label: "OUTWARD", value: 3 },
-        { label: "OG", value: 4 },
     ];
 
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [activeTab, setActiveTab] = useState(tabData[0].value);
-    const [expandedEntries, setExpandedEntries] = useState({});
     const [expandedEntry, setExpandedEntry] = useState(false);
 
     useEffect(() => {
@@ -97,10 +94,10 @@ const GodownActivities = () => {
             };
 
             day.DayEntries.forEach(entry => {
-                console.log(entry.PurchaseTotal)
+                // console.log(entry.PurchaseTotal)
                 dailyTotal.inward = entry.PurchaseTotal;
                 dailyTotal.management = entry.Handle + entry.WGChecking;
-                dailyTotal.outward = entry.SalesOnlyTotal;
+                dailyTotal.outward = entry.SalesTotal;
                 dailyTotal.otherGodown = entry.SalesOtherGodown;
 
                 dailyTotal.inward = dailyTotal.inward.toFixed(2);
@@ -112,7 +109,8 @@ const GodownActivities = () => {
 
                 totals.inward += entry.PurchaseTotal;
                 totals.management += entry.Handle + entry.WGChecking;
-                totals.outward += entry.SalesOnlyTotal;
+                totals.outward += entry.SalesTotal;
+                totals.outward += entry.SalesTotal;
                 totals.otherGodown += entry.SalesOtherGodown;
             });
 
@@ -155,10 +153,9 @@ const GodownActivities = () => {
                             justifyContent: "space-between",
                             alignContent: "center"
                         }}>
-                            <Text style={{ marginLeft: 30, marginRight: 30 }}>{dailyTotal.inward}</Text>
-                            <Text style={{ marginRight: 40 }}>{dailyTotal.management}</Text>
-                            <Text style={{ marginRight: 40 }}>{dailyTotal.outward}</Text>
-                            <Text>{dailyTotal.otherGodown}</Text>
+                            <Text style={{ ...typography.body1(colors), marginLeft: 70, marginRight: 60 }}>{dailyTotal.inward}</Text>
+                            <Text style={{ ...typography.body1(colors), marginRight: 30 }}>{dailyTotal.management}</Text>
+                            <Text style={{ ...typography.body1(colors), marginRight: 30 }}>{dailyTotal.outward}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -187,7 +184,6 @@ const GodownActivities = () => {
 
                         {/* Day Entries */}
                         {item.DayEntries.map(entry => {
-                            const isEntryExpanded = expandedEntries[entry.Id];
 
                             return (
                                 <View key={entry.Id} style={styles(colors).dayEntry}>
@@ -252,10 +248,6 @@ const GodownActivities = () => {
                                                     <Text style={styles(colors).rowCardTitle}>Transfer</Text>
                                                     <Text style={styles(colors).rowCardText}>{entry.SalesTransfer}</Text>
                                                 </View>
-                                            </View>
-                                        )}
-                                        {activeTab === 4 && (
-                                            <View style={styles(colors).card}>
                                                 <View style={styles(colors).row}>
                                                     <Text style={styles(colors).rowCardTitle}>Other Godown</Text>
                                                     <Text style={styles(colors).rowCardText}>{entry.SalesOtherGodown}</Text>
@@ -355,25 +347,20 @@ const GodownActivities = () => {
                     </View>
                 </View>
 
-                <View style={styles(colors).rowContainer}>
+                <View style={[styles(colors).rowContainer, { width: "50%", justifyContent: "center" }]}>
                     <View style={styles(colors).totalsInnerContainer}>
                         <Text style={styles(colors).totalsText}>Outward </Text>
                         <Text style={styles(colors).totalsText}>{totals.outward}</Text>
-                    </View>
-
-                    <View style={styles(colors).totalsInnerContainer}>
-                        <Text style={styles(colors).totalsText}>OG</Text>
-                        <Text style={styles(colors).totalsText}>{totals.otherGodown}</Text>
                     </View>
                 </View>
             </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 10 }}>
-                <Text style={{ flex: 1, textAlign: "center" }}></Text>
-                <Text style={{ flex: 1, textAlign: "center" }}>Inwards</Text>
-                <Text style={{ flex: 1, textAlign: "center" }}>MG</Text>
-                <Text style={{ flex: 1, textAlign: "center" }}>Outwards</Text>
-                <Text style={{ flex: 1, textAlign: "center" }}>OG</Text>
+                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}></Text>
+                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}></Text>
+                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>Inwards</Text>
+                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>MG</Text>
+                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>Outwards</Text>
             </View>
 
             <FlatList
@@ -381,6 +368,11 @@ const GodownActivities = () => {
                 renderItem={renderItem}
                 keyExtractor={item => item.EntryDate}
                 contentContainerStyle={styles(colors).listContainer}
+                ListEmptyComponent={() => (
+                    <View style={styles(colors).noDataContainer}>
+                        <Text style={styles(colors).noDataText}>No data to display</Text>
+                    </View>
+                )}
             />
         </View>
     )
@@ -461,13 +453,21 @@ const styles = (colors) => StyleSheet.create({
         borderRadius: 5
     },
     totalsText: {
-        fontSize: 16,
-        color: colors.text,
+        ...typography.body1(colors)
     },
 
 
     listContainer: {
         paddingBottom: 20,
+    },
+    noDataContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    noDataText: {
+        ...typography.h6(colors)
     },
     accordionContainer: {
         marginBottom: 10,
@@ -528,11 +528,12 @@ const styles = (colors) => StyleSheet.create({
         backgroundColor: colors.primary,
     },
     tabText: {
+        ...typography.body1(colors),
         color: colors.accent,
         fontWeight: 'bold',
     },
     activeTabText: {
-        color: colors.text,
+        ...typography.body1(colors),
     },
     tableContainer: {
         margin: 10,
@@ -566,7 +567,7 @@ const styles = (colors) => StyleSheet.create({
     },
     details: {
         marginTop: 10,
-        paddingLeft: 5,
+        paddingLeft: 10,
         borderLeftWidth: 2,
         borderLeftColor: colors.accent,
     },
@@ -595,14 +596,12 @@ const styles = (colors) => StyleSheet.create({
         marginBottom: 10,
     },
     rowCardTitle: {
-        fontSize: 16,
+        ...typography.body1(colors),
         fontWeight: 'bold',
-        color: colors.text,
         marginRight: 10,
     },
     rowCardText: {
-        fontSize: 16,
-        color: colors.text,
+        ...typography.body1(colors),
     },
     cardTitle: {
         ...typography.h6(colors),

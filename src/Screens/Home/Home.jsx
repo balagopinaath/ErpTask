@@ -195,11 +195,13 @@ const HomeScreen = () => {
             )}
 
             <View style={styles(colors).webCard}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={styles(colors).webCardView}>
                     <TouchableOpacity
                         style={styles(colors).iconView}
                         onPress={() => {
-                            navigation.navigate('WebViewScreen', { url: `https://erpsmt.in?Auth=${token}` });
+                            navigation.navigate('WebViewScreen',
+                                { url: `https://erpsmt.in?Auth=${token}` }
+                            );
                         }}>
                         <Image source={userType === 'EMPLOYEE'
                             ? require('../../../assets/images/clipboard.png')
@@ -232,6 +234,17 @@ const HomeScreen = () => {
                                     style={styles(colors).logo}
                                 />
                                 <Text style={styles(colors).text}>Driver Activities</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate('DeliveryActivities');
+                                }}>
+                                <Image source={require('../../../assets/images/fast-delivery.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Delivery Activities</Text>
                             </TouchableOpacity>
                         </React.Fragment>
                     )}
@@ -345,7 +358,6 @@ const styles = (colors) => StyleSheet.create({
         flexDirection: 'column',
         backgroundColor: colors.background,
         borderRadius: 10,
-        padding: 15,
         elevation: 2,
         shadowColor: colors.background === "#000000" ? colors.white : colors.black,
         shadowOffset: {
@@ -354,26 +366,33 @@ const styles = (colors) => StyleSheet.create({
         },
         shadowOpacity: 0.22,
         shadowRadius: 2.22,
+        padding: 15,
         marginVertical: 10,
-        marginHorizontal: 20,
+    },
+    webCardView: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: "wrap",
+        paddingHorizontal: 5,
     },
     iconView: {
-        width: 110,
-        height: 110,
+        width: 100,
+        height: 100,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 0.75,
         borderRadius: 10,
+        marginVertical: 10
     },
     logo: {
-        width: 40,
-        height: 40,
+        width: 35,
+        height: 35,
     },
     text: {
         textAlign: 'center',
         ...typography.body1(colors),
         color: colors.text,
-        marginTop: 10,
+        marginTop: 5,
     },
     centeredView: {
         flex: 1,
