@@ -12,6 +12,7 @@ import WebViewScreen from './Screens/Home/WebViewScreen';
 import DriverActivities from './Activities/DriverActivities';
 import GodownActivities from './Activities/GodownActivities';
 import DeliveryAvtivities from './Activities/DeliveryActivities';
+import StaffActivities from './Activities/StaffActivities';
 
 const Stack = createNativeStackNavigator();
 
@@ -69,6 +70,23 @@ const App = () => {
                     <Stack.Screen name="DeliveryActivities" component={DeliveryAvtivities}
                         options={{
                             title: "Delivery Activities",
+                            headerShown: true,
+                            headerBlurEffect: true,
+                            headerStyle: {
+                                backgroundColor: colors.primary,
+                            },
+                            headerTintColor: colors.white,
+                            headerTitleStyle: {
+                                ...typography.h5(colors),
+                                fontWeight: '600',
+                                color: colors.white,
+                            }
+                        }}
+                    />
+
+                    <Stack.Screen name="StaffActivities" component={StaffActivities}
+                        options={{
+                            title: "Staff Activities",
                             headerShown: true,
                             headerBlurEffect: true,
                             headerStyle: {

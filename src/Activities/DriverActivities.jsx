@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Image } from 'react-native';
 import { api } from '../Constants/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -7,7 +7,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
 import { customColors, typography } from '../Constants/helper';
-import { Image } from 'react-native';
 
 const DriverActivities = () => {
     const colorScheme = useColorScheme();
@@ -175,17 +174,17 @@ const DriverActivities = () => {
                         />
                         <Icon name="calendar" color={colors.accent} size={20} />
                     </TouchableOpacity>
-                </View>
 
-                {showDatePicker && (
-                    <DateTimePicker
-                        backgroundColor={colors.primary}
-                        value={selectedDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleDateChange}
-                    />
-                )}
+                    {showDatePicker && (
+                        <DateTimePicker
+                            backgroundColor={colors.primary}
+                            value={selectedDate}
+                            mode="date"
+                            display="default"
+                            onChange={handleDateChange}
+                        />
+                    )}
+                </View>
 
                 <Dropdown
                     data={dropDownData}
@@ -241,6 +240,11 @@ const DriverActivities = () => {
                 data={organizedData}
                 renderItem={renderDriverItem}
                 keyExtractor={(item) => item.DriverName}
+                ListEmptyComponent={() => (
+                    <View style={styles(colors).noDataContainer}>
+                        <Text style={styles(colors).noDataText}>No data to display</Text>
+                    </View>
+                )}
             />
 
 
@@ -275,7 +279,7 @@ const styles = (colors) => StyleSheet.create({
     },
     textInput: {
         flex: 1,
-        color: "#111",
+        color: colors.text,
         ...typography.body1(colors),
     },
     dropdown: {
@@ -312,8 +316,9 @@ const styles = (colors) => StyleSheet.create({
     overViewInner: {
         justifyContent: "center",
         alignContent: "center",
-        borderWidth: 2,
-        borderColor: colors.secondary,
+        borderWidth: 0.75,
+        backgroundColor: colors.secondary,
+        borderColor: colors.primary,
         borderRadius: 20,
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -322,95 +327,6 @@ const styles = (colors) => StyleSheet.create({
         textAlign: "center",
         ...typography.h4(colors)
     },
-    card: {
-        width: "95%",
-        alignSelf: "center",
-        backgroundColor: colors.background,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
-        elevation: 2,
-        borderRadius: 8,
-        padding: 10,
-        marginVertical: 10,
-    },
-    // accordionHeader: {
-    // flexDirection: 'row',
-    // justifyContent: 'space-between',
-    // height: 30,
-    // alignItems: 'center',
-    // },
-    driverInfo: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 15,
-    },
-    driverDetail: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    driverName: {
-        ...typography.body1(colors),
-        fontWeight: '700',
-        marginLeft: 5,
-    },
-    page: {
-        flex: 1,
-    },
-    buttonContainer: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        marginVertical: 10,
-    },
-    tripCategoryButton: {
-        flex: 0.4,
-        backgroundColor: colors.secondary,
-        paddingHorizontal: 8,
-    },
-    buttonText: {
-        textAlign: "center",
-        justifyContent: "center",
-        ...typography.body1(colors),
-        color: colors.white,
-    },
-    table: {
-        borderWidth: 0.75,
-        borderColor: colors.secondary,
-        borderRadius: 5,
-        marginBottom: 10,
-        overflow: 'hidden',
-    },
-    columnHeader: {
-        ...typography.body1(colors),
-        fontWeight: 'bold',
-        paddingHorizontal: 10,
-        color: '#333',
-    },
-    tableHeader: {
-        // textAlign: 'center',
-        backgroundColor: '#f0f0f0',
-        borderBottomWidth: 2,
-        borderBottomColor: '#aaa',
-    },
-
-    tableRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-    },
-    tableCell: {
-        flex: 1,
-        ...typography.body1(colors),
-        textAlign: 'center',
-        justifyContent: 'center',
-    },
-
     noDataContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -421,8 +337,6 @@ const styles = (colors) => StyleSheet.create({
         fontSize: 16,
         color: colors.text,
     },
-
-
     accordionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -461,6 +375,10 @@ const styles = (colors) => StyleSheet.create({
         justifyContent: "space-evenly",
         alignItems: "center",
     },
+    subTitle: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+    },
 
     accordionContent: {
         flexDirection: "row",
@@ -488,11 +406,6 @@ const styles = (colors) => StyleSheet.create({
         // marginLeft: 15,
         // marginBottom: 10
     },
-    subTitle: {
-        ...typography.h6(colors),
-        fontWeight: 'bold',
-    },
-
 });
 
 export default DriverActivities;

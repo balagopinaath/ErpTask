@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Dimensions } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -11,6 +11,10 @@ const GodownActivities = () => {
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
     const colors = customColors[isDarkMode ? 'dark' : 'light'];
+
+    const screenWidth = Dimensions.get('window').width;
+    const marginHorizontal = screenWidth * 0.075;
+    const flexValue = screenWidth / 3;
 
     const [godownData, setGodownData] = useState([])
 
@@ -140,7 +144,10 @@ const GodownActivities = () => {
                     {/* Display Date and Totals */}
                     <View style={styles(colors).accordionView}>
                         <View style={{ flexDirection: "row" }}>
-                            <Icon name="calendar-o" color={colors.accent} size={20} style={{ marginRight: 10 }} />
+                            <Icon name="calendar-o" color={colors.accent}
+                                size={20}
+                                style={{ marginRight: 10 }}
+                            />
                             <Text style={styles(colors).accordionHeaderText}>
                                 {new Date(item.EntryDate).toLocaleDateString('en-GB', {
                                     day: '2-digit',
@@ -153,9 +160,29 @@ const GodownActivities = () => {
                             justifyContent: "space-between",
                             alignContent: "center"
                         }}>
-                            <Text style={{ ...typography.body1(colors), marginLeft: 70, marginRight: 60 }}>{dailyTotal.inward}</Text>
-                            <Text style={{ ...typography.body1(colors), marginRight: 30 }}>{dailyTotal.management}</Text>
-                            <Text style={{ ...typography.body1(colors), marginRight: 30 }}>{dailyTotal.outward}</Text>
+                            <Text style={{
+                                ...typography.body1(colors),
+                                marginLeft: marginHorizontal,
+                                marginRight: marginHorizontal,
+                                borderRightWidth: 2,
+                                paddingRight: 15,
+                                borderRightWidth: 2,
+                                borderRightColor: colors.text,
+                                borderLeftColor: colors.text,
+                                borderLeftWidth: 2,
+                                paddingLeft: 15,
+                            }}>{dailyTotal.inward}</Text>
+                            <Text style={{
+                                ...typography.body1(colors),
+                                marginRight: marginHorizontal,
+                                borderRightWidth: 2,
+                                paddingRight: 15,
+                                borderRightColor: colors.text,
+                            }}>{dailyTotal.management}</Text>
+                            <Text style={{
+                                ...typography.body1(colors),
+                                marginRight: marginHorizontal
+                            }}>{dailyTotal.outward}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -356,11 +383,9 @@ const GodownActivities = () => {
             </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 10 }}>
-                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}></Text>
-                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}></Text>
-                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>Inwards</Text>
-                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>MG</Text>
-                <Text style={{ flex: 1, textAlign: "center", ...typography.body1(colors) }}>Outwards</Text>
+                <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginLeft: 105 }}>Inwards</Text>
+                <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginRight: 20 }}>MG</Text>
+                <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginRight: 20 }}>Outwards</Text>
             </View>
 
             <FlatList
@@ -455,8 +480,6 @@ const styles = (colors) => StyleSheet.create({
     totalsText: {
         ...typography.body1(colors)
     },
-
-
     listContainer: {
         paddingBottom: 20,
     },
@@ -469,6 +492,7 @@ const styles = (colors) => StyleSheet.create({
     noDataText: {
         ...typography.h6(colors)
     },
+
     accordionContainer: {
         marginBottom: 10,
         borderWidth: 1,
@@ -492,21 +516,7 @@ const styles = (colors) => StyleSheet.create({
         fontWeight: 'bold',
         color: colors.text,
     },
-    dayEntry: {
-        flexDirection: "column",
-        padding: 10,
-        // borderBottomWidth: 1,
-        // borderBottomColor: colors.border,
-    },
-    entryHeader: {
-        flexDirection: 'row',
-        // alignContent: 'center',
-        // alignItems: 'center',
-        paddingVertical: 10,
-    },
-    entryContent: {
-        paddingLeft: 20,
-    },
+
     accordionContent: {
         padding: 15,
         backgroundColor: colors.card,
@@ -535,44 +545,21 @@ const styles = (colors) => StyleSheet.create({
     activeTabText: {
         ...typography.body1(colors),
     },
-    tableContainer: {
-        margin: 10,
+
+    dayEntry: {
+        flexDirection: "column",
         padding: 10,
-        backgroundColor: colors.tableBackground,
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: colors.tableBorder,
-    },
-    tableRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         // borderBottomWidth: 1,
-        // borderBottomColor: colors.rowBorder,
+        // borderBottomColor: colors.border,
+    },
+    entryHeader: {
+        flexDirection: 'row',
+        // alignContent: 'center',
+        // alignItems: 'center',
         paddingVertical: 10,
     },
-    tableHeader: {
-        flex: 1,
-        fontWeight: 'bold',
-        color: colors.headerText,
-        textAlign: 'center',
-    },
-    tableCell: {
-        flex: 1,
-        padding: 5,
-        textAlign: 'center',
-    },
-    tableText: {
-        color: colors.cellText,
-        textAlign: 'center',
-    },
-    details: {
-        marginTop: 10,
-        paddingLeft: 10,
-        borderLeftWidth: 2,
-        borderLeftColor: colors.accent,
-    },
-    detailText: {
-        color: colors.detailText,
+    entryContent: {
+        paddingLeft: 20,
     },
 
     card: {
@@ -595,6 +582,12 @@ const styles = (colors) => StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
     },
+    details: {
+        marginTop: 10,
+        paddingLeft: 10,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.accent,
+    },
     rowCardTitle: {
         ...typography.body1(colors),
         fontWeight: 'bold',
@@ -602,15 +595,5 @@ const styles = (colors) => StyleSheet.create({
     },
     rowCardText: {
         ...typography.body1(colors),
-    },
-    cardTitle: {
-        ...typography.h6(colors),
-        fontWeight: '600',
-        marginBottom: 10,
-    },
-    cardText: {
-        ...typography.body1(colors),
-        fontWeight: '700',
-        marginBottom: 15,
     },
 })

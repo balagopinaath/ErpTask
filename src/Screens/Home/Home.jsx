@@ -246,6 +246,17 @@ const HomeScreen = () => {
                                 />
                                 <Text style={styles(colors).text}>Delivery Activities</Text>
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate('StaffActivities');
+                                }}>
+                                <Image source={require('../../../assets/images/staff-management.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Staff Activities</Text>
+                            </TouchableOpacity>
                         </React.Fragment>
                     )}
                 </View>
