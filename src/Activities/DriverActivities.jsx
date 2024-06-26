@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Image, ScrollView } from 'react-native';
 import { api } from '../Constants/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AntIcons from 'react-native-vector-icons/AntDesign';
+import FeatherIcons from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
 import { customColors, typography } from '../Constants/helper';
@@ -14,28 +16,49 @@ const DriverActivities = () => {
     const colors = customColors[isDarkMode ? 'dark' : 'light'];
 
     const [organizedData, setOrganizedData] = useState([]);
+    const [driverData, setDriverData] = useState([]);
     const [expandedDriver, setExpandedDriver] = useState(false);
     const [expandedTrip, setExpandedTrip] = useState(false);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const dropDownData = [
+    const placeDropDown = [
         { label: "MILL", value: 1 },
         { label: "GODOWN", value: 2 }
     ];
-    const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
+    const [placeDropDownValue, setPlaceDropDownValue] = useState(placeDropDown[0].label);
+
+    const reportDropDown = [
+        { label: "Godown Based", value: 1 },
+        { label: "Trip Based", value: 2 }
+    ];
+    const [reportDropDownValue, setReportDropDownValue] = useState(reportDropDown[0].label);
+    const [selectedTabs, setSelectedTabs] = useState({});
+    const [driverActivityTotals, setDriverActivityTotals] = useState({});
 
     useEffect(() => {
-        getDriverActivities(selectedDate.toISOString(), dropDownValue);
-    }, [selectedDate, dropDownValue]);
+        // getDriverTripActivities(selectedDate.toISOString(), placeDropDownValue);
+        // getDriverActivities(selectedDate.toISOString(), placeDropDownValue);
+        getDriverData();
+    }, [selectedDate, placeDropDownValue, reportDropDownValue]);
 
-    const getDriverActivities = async (date, dropValue) => {
+    const getDriverData = async () => {
         try {
-            const response = await fetch(api.getDriverTripBasedActivities(date, dropValue));
-            const jsonData = await response.json();
+            if (reportDropDownValue === "Trip Based") {
+                const response = await fetch(api.getDriverTripBasedActivities(selectedDate.toISOString(), placeDropDownValue));
+                const jsonData = await response.json();
 
-            if (jsonData.success) {
-                setOrganizedData(jsonData.data);
+                if (jsonData.success) {
+                    setOrganizedData(jsonData.data);
+                }
+            } else if (reportDropDownValue === "Godown Based") {
+                const response = await fetch(api.getDriverActivities(selectedDate.toISOString(), placeDropDownValue));
+                const jsonData = await response.json();
+
+                if (jsonData.success) {
+                    setDriverData(jsonData.data);
+                    calculateDriverActivitiesTotals(jsonData.data);
+                }
             }
         } catch (err) {
             console.log("Error fetching data:", err);
@@ -53,14 +76,6 @@ const DriverActivities = () => {
         }
     };
 
-    const toggleDriverExpand = (driverName) => {
-        setExpandedDriver(expandedDriver === driverName ? null : driverName);
-    };
-
-    const toggleTripExpand = (tripNumber) => {
-        setExpandedTrip(expandedTrip === tripNumber ? null : tripNumber);
-    };
-
     const convertTo12HourFormat = (timeString) => {
         const [hours, minutes, seconds] = timeString.split(':');
 
@@ -71,6 +86,44 @@ const DriverActivities = () => {
 
         return formattedTime;
     };
+
+    const toggleDriverExpand = (driverName) => {
+        setExpandedDriver(expandedDriver === driverName ? null : driverName);
+    };
+
+    const toggleTripExpand = (tripNumber) => {
+        setExpandedTrip(expandedTrip === tripNumber ? null : tripNumber);
+    };
+
+    const calculateDriverActivitiesTotals = (data) => {
+        const driverTotals = {};
+        const categoryTotals = {};
+
+        data.forEach(driver => {
+            let driverTotal = 0;
+
+            driver.LocationGroup.forEach(location => {
+                let categoryTotal = 0;
+
+                location.TripDetails.forEach(tripDetail => {
+                    tripDetail.Trips.forEach(trip => {
+                        driverTotal += trip.TonnageValue;
+                        categoryTotal += trip.TonnageValue;
+                    });
+                });
+
+                if (!categoryTotals[driver.DriverName]) {
+                    categoryTotals[driver.DriverName] = {};
+                }
+                categoryTotals[driver.DriverName][location.TripCategory] = categoryTotal;
+            });
+
+            driverTotals[driver.DriverName] = driverTotal;
+        });
+        // console.log("Driver Totals:", driverTotals);
+        // console.log("Category Totals:", categoryTotals);
+        setDriverActivityTotals({ driverTotals, categoryTotals });
+    }
 
     const renderDriverItem = ({ item }) => {
         const totalDriverTonnage = item.Trips.reduce((sum, trip) => {
@@ -87,11 +140,20 @@ const DriverActivities = () => {
                 >
                     <View style={styles(colors).accordionHeaderView}>
                         <Icon name='user-o' size={25} color={colors.accent} />
-                        <Text style={styles(colors).headerText}>{item.DriverName}</Text>
+                        <Text style={styles(colors).headerText}>
+                            {item.DriverName}
+                        </Text>
                     </View>
-                    <View style={styles(colors).accordionHeaderView}>
-                        <MaterialIcons name='weight' size={25} color={colors.accent} />
-                        <Text style={styles(colors).tonnageText}> {totalDriverTonnage.toFixed(2)}</Text>
+                    <View>
+                        <View style={styles(colors).accordionHeaderView}>
+                            <FeatherIcons name='truck' size={25} color={colors.accent} />
+                            <Text style={styles(colors).tonnageText}> {item.Trips.length}</Text>
+                        </View>
+
+                        <View style={styles(colors).accordionHeaderView}>
+                            <Icon name='shopping-bag' size={25} color={colors.accent} />
+                            <Text style={styles(colors).tonnageText}> {totalDriverTonnage.toFixed(2)}</Text>
+                        </View>
                     </View>
                 </TouchableOpacity>
                 {expandedDriver === item.DriverName && (
@@ -158,8 +220,17 @@ const DriverActivities = () => {
         // console.log('Total TonnageValue:', totalTonnageValue.toFixed(2));
         // console.log('Number of drivers:', totalDrivers);
     }
-
     const { totalTrips, totalTonnageValue, totalDrivers } = totals();
+    // console.log(totalTrips)
+
+    const handleTabPress = (driverIndex, tripCategory) => {
+        setSelectedTabs(prev => ({
+            ...prev,
+            [driverIndex]: prev[driverIndex] === tripCategory ? null : tripCategory,
+        }));
+    };
+
+
 
     return (
         <View style={styles(colors).container}>
@@ -187,11 +258,11 @@ const DriverActivities = () => {
                 </View>
 
                 <Dropdown
-                    data={dropDownData}
-                    value={dropDownValue}
+                    data={placeDropDown}
+                    value={placeDropDownValue}
                     labelField="label"
                     valueField="label"
-                    placeholder="Select Location"
+                    placeholder="Select Place"
                     renderLeftIcon={() => (
                         <Icon name="map-marker"
                             color={colors.accent} size={20}
@@ -199,7 +270,7 @@ const DriverActivities = () => {
                         />
                     )}
                     onChange={item => {
-                        setDropDownValue(item.label);
+                        setPlaceDropDownValue(item.label);
                     }}
                     maxHeight={300}
                     style={styles(colors).dropdown}
@@ -210,44 +281,120 @@ const DriverActivities = () => {
                 />
             </View>
 
-            <View style={styles(colors).overViewCard}>
-                <View style={styles(colors).overViewInner}>
-                    <Image
-                        style={{ width: 40, height: 40 }}
-                        source={require('../../assets/images/driver.png')}
+            <Dropdown
+                data={reportDropDown}
+                value={reportDropDownValue}
+                labelField="label"
+                valueField="label"
+                placeholder="Select the One"
+                renderLeftIcon={() => (
+                    <MaterialIcons name="apple-keyboard-option"
+                        color={colors.accent} size={20}
+                        style={{ marginRight: 10, }}
                     />
-                    <Text style={styles(colors).overViewInnerText}>{totalDrivers}</Text>
-                </View>
-
-                <View style={styles(colors).overViewInner}>
-                    <Image
-                        style={{ width: 40, height: 40 }}
-                        source={require('../../assets/images/pick-up.png')}
-                    />
-                    <Text style={styles(colors).overViewInnerText}>{totalTrips}</Text>
-                </View>
-
-                <View style={styles(colors).overViewInner}>
-                    <Image
-                        style={{ width: 40, height: 40 }}
-                        source={require('../../assets/images/measure.png')}
-                    />
-                    <Text style={styles(colors).overViewInnerText}>{totalTonnageValue.toFixed(2)}</Text>
-                </View>
-            </View>
-
-            <FlatList
-                data={organizedData}
-                renderItem={renderDriverItem}
-                keyExtractor={(item) => item.DriverName}
-                ListEmptyComponent={() => (
-                    <View style={styles(colors).noDataContainer}>
-                        <Text style={styles(colors).noDataText}>No data to display</Text>
-                    </View>
                 )}
+                onChange={item => {
+                    setReportDropDownValue(item.label);
+                }}
+                maxHeight={300}
+                style={[styles(colors).dropdown, { width: "55%", marginHorizontal: "auto", marginVertical: 20 }]}
+                placeholderStyle={styles(colors).placeholderStyle}
+                containerStyle={styles(colors).dropdownContainer}
+                selectedTextStyle={styles(colors).selectedTextStyle}
+                iconStyle={styles(colors).iconStyle}
             />
 
+            {reportDropDownValue === "Godown Based" ? (
+                <ScrollView>
+                    {driverData.length === 0 ? (
+                        <View style={styles(colors).noDataContainer}>
+                            <Text style={styles(colors).noDataText}>No data to display</Text>
+                        </View>
+                    ) : (
+                        driverData.map((driver, index) => (
+                            <View key={index} style={styles(colors).card}>
+                                <View style={styles(colors).cardHeading}>
+                                    <View style={{ flexDirection: "row" }}>
+                                        <Icon name='user-o' size={20} color={colors.accent} />
+                                        <Text style={styles(colors).cardTitle}>{driver.DriverName}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: "row" }}>
+                                        <Icon name='shopping-bag' size={20} color={colors.accent} />
+                                        <Text style={styles(colors).cardTitle}>{driverActivityTotals.driverTotals?.[driver.DriverName] || 0}</Text>
+                                    </View>
+                                </View>
+                                <View style={styles(colors).tabsContainer}>
+                                    {driver.LocationGroup.map((location, locIndex) => {
+                                        const hasTrips = location.TripDetails.some(tripDetail => tripDetail.Trips.length > 0);
 
+                                        return (
+                                            hasTrips && (
+                                                <TouchableOpacity
+                                                    key={locIndex}
+                                                    style={[
+                                                        styles(colors).tab,
+                                                        selectedTabs[index] === location.TripCategory && styles(colors).activeTab,
+                                                    ]}
+                                                    onPress={() => handleTabPress(index, location.TripCategory)}
+                                                    disabled={!hasTrips} // Disable the tab if there are no trips
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles(colors).tabTitle,
+                                                            selectedTabs[index] === location.TripCategory && styles(colors).activeTabTitle,
+                                                        ]}
+                                                    >
+                                                        {location.TripCategory}
+                                                        <Text style={{ color: colors.accent, fontWeight: "bold" }}>
+                                                            &nbsp;({(driverActivityTotals.categoryTotals?.[driver.DriverName]?.[location.TripCategory] || 0).toFixed(2)})
+                                                        </Text>
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )
+                                        );
+                                    })}
+                                </View>
+                                {driver.LocationGroup.map((location, locIndex) => (
+                                    selectedTabs[index] === location.TripCategory && (
+                                        <View key={locIndex} style={styles(colors).tripActivityDetails}>
+                                            {location.TripDetails.map((tripDetail, tripDetailIndex) => (
+                                                <View key={tripDetailIndex} style={styles(colors).tripActivityDetail}>
+                                                    <Text style={styles(colors).tripActivityDetailText}>Trip: {tripDetail.TripNumber}</Text>
+                                                    {tripDetail.Trips.map((trip, tripIndex) => (
+                                                        <View key={tripIndex} style={styles(colors).tripActivity}>
+                                                            <View style={{ flexDirection: "row" }}>
+                                                                <Icon name='clock-o' size={20} color={colors.accent} />
+                                                                <Text style={styles(colors).tripActivityText}>
+                                                                    &nbsp;{new Date(trip.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </Text>
+                                                            </View>
+                                                            <View style={{ flexDirection: "row" }}>
+                                                                <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                                                <Text style={styles(colors).tripActivityText}> {trip.TonnageValue}</Text>
+                                                            </View>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            ))}
+                                        </View>
+                                    )
+                                ))}
+                            </View>
+                        ))
+                    )}
+                </ScrollView>
+            ) : (
+                <FlatList
+                    data={organizedData}
+                    renderItem={renderDriverItem}
+                    keyExtractor={(item) => item.DriverName}
+                    ListEmptyComponent={() => (
+                        <View style={styles(colors).noDataContainer}>
+                            <Text style={styles(colors).noDataText}>No data to display</Text>
+                        </View>
+                    )}
+                />
+            )}
 
         </View>
     );
@@ -379,7 +526,6 @@ const styles = (colors) => StyleSheet.create({
         ...typography.h6(colors),
         fontWeight: 'bold',
     },
-
     accordionContent: {
         flexDirection: "row",
         justifyContent: "space-evenly",
@@ -388,7 +534,8 @@ const styles = (colors) => StyleSheet.create({
         // marginBottom: 5,
     },
     tripDetails: {
-        width: "45%",
+        minWidth: 100,
+        maxWidth: 175,
         borderWidth: 0.75,
         borderColor: colors.primary,
         backgroundColor: colors.secondary,
@@ -405,6 +552,75 @@ const styles = (colors) => StyleSheet.create({
         flexWrap: "wrap",
         // marginLeft: 15,
         // marginBottom: 10
+    },
+    card: {
+        backgroundColor: colors.background,
+        borderRadius: 10,
+        padding: 15,
+        marginVertical: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 2,
+        marginHorizontal: 10
+    },
+    cardHeading: {
+        flexDirection: "row",
+        justifyContent: "space-between"
+    },
+    cardTitle: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+        marginLeft: 5,
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    tab: {
+        minWidth: 100,
+        maxWidth: 150,
+        padding: 10,
+        borderRadius: 10,
+        marginRight: 5,
+        marginVertical: 10,
+    },
+    tabTitle: {
+        textAlign: "center",
+        ...typography.body1(colors),
+    },
+    activeTab: {
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    activeTabTitle: {
+        ...typography.body1(colors),
+        // color: colors.white,
+    },
+    tripActivityDetails: {
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        marginTop: 15,
+    },
+    tripActivityDetail: {
+        // marginBottom: 10,
+    },
+    tripActivityDetailText: {
+        ...typography.body1(colors),
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    tripActivity: {
+        // marginLeft: 10,
+    },
+    tripActivityText: {
+        ...typography.body1(colors),
+        // fontWeight: "bold",
     },
 });
 
