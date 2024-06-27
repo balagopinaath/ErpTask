@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Image, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, ScrollView } from 'react-native';
 import { api } from '../Constants/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -24,6 +24,13 @@ const StaffActivities = () => {
     ];
     const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
 
+    const reportDropDown = [
+        { label: "Individual Activities", value: 1 },
+        { label: "Overall Activities", value: 2 }
+    ];
+    const [reportDropDownValue, setReportDropDownValue] = useState(reportDropDown[0].label);
+    const [staffCategoryMap, setStaffCategoryMap] = useState({});
+
     useEffect(() => {
         getStaffActivities(selectedDate.toISOString(), dropDownValue);
     }, [selectedDate, dropDownValue]);
@@ -35,6 +42,12 @@ const StaffActivities = () => {
 
             if (jsonData.success) {
                 setOrganizedData(jsonData.data);
+
+                // const categories = jsonData.data[0]?.Categories || [];
+                // setOrganizedData(categories);
+
+                const staffCategoryMap = getStaffCategoryReport(jsonData.data);
+                setStaffCategoryMap(staffCategoryMap);
             }
         } catch (err) {
             console.log("Error fetching data:", err);
@@ -61,13 +74,90 @@ const StaffActivities = () => {
         });
     };
 
-    // Render function to display data
-    const renderStaffDetails = () => {
+    const renderCategory = ({ item }) => {
+        return (
+            <View style={styles(colors).categoryContainer}>
+                <Text style={styles(colors).categoryTitle}>{item.Category}</Text>
+                {renderStaffDetails(item.StaffDetails)}
+            </View>
+        );
+    };
+
+    const renderStaffDetails = (staffDetails) => {
+        if (!staffDetails || !Array.isArray(staffDetails) || staffDetails.length === 0) {
+            return <Text>No staff details available.</Text>;
+        }
+
+        return staffDetails.map(staff => (
+            <View key={staff.Id} style={styles(colors).staffDetails}>
+                <Text style={styles(colors).staffName}>{staff.StaffName}</Text>
+                <Text style={styles(colors).staffInfo}>Category: {staff.Category}</Text>
+                <Text style={styles(colors).staffInfo}>Tonnage: {staff.Tonnage}</Text>
+            </View>
+        ));
+    };
+
+    const getStaffCategoryReport = (data) => {
+        const staffCategoryMap = {};
+
+        data.forEach(entry => {
+            entry.Categories.forEach(category => {
+                category.StaffDetails.forEach(staff => {
+                    if (!staffCategoryMap[staff.StaffName]) {
+                        staffCategoryMap[staff.StaffName] = { categories: {}, totalTonnage: 0 };
+                    }
+                    if (!staffCategoryMap[staff.StaffName].categories[category.Category]) {
+                        staffCategoryMap[staff.StaffName].categories[category.Category] = 0;
+                    }
+                    staffCategoryMap[staff.StaffName].categories[category.Category] += parseFloat(staff.Tonnage);
+                    staffCategoryMap[staff.StaffName].totalTonnage += parseFloat(staff.Tonnage);
+                });
+            });
+        });
+
+        return staffCategoryMap;
+    };
+
+    const renderStaffCategoryReport = (staffCategoryMap) => {
+        return Object.keys(staffCategoryMap).map(staffName => (
+            <View key={staffName} style={styles(colors).staffReportContainer}>
+                <View style={{ flexDirection: "row" }}>
+                    <Icon name='user-o' size={20} color={colors.accent} style={{ marginRight: 5 }} />
+                    <Text style={styles(colors).staffReportName}>
+                        {staffName}
+                        <Text style={{ color: colors.accent }}>
+                            &nbsp;({staffCategoryMap[staffName].totalTonnage.toFixed(2)})
+                        </Text>
+                    </Text>
+                </View>
+                {Object.keys(staffCategoryMap[staffName].categories).map(category => (
+                    <View key={category} style={{ flexDirection: "row", marginTop: 5 }}>
+                        <Icon name='user-o' size={20} color="transparent" style={{ marginRight: 5 }} />
+                        <Text style={styles(colors).staffReportCategory}>
+                            {category}:
+                            <Text style={{ color: colors.primary }}>
+                                &nbsp;({staffCategoryMap[staffName].categories[category].toFixed(2)})
+                            </Text>
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        ));
+    };
+
+    // OverAll
+
+    const renderOverAllStaffDetails = () => {
         return organizedData.map((category, index) => (
             <View key={category.EntryTime} style={styles(colors).cardContainer}>
-                <Text style={styles(colors).heading}>
-                    {new Date(category.EntryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15, }}>
+                    <View style={{ flexDirection: "row", }}>
+                        <Icon name='clock-o' size={20} color={colors.accent} style={{ marginTop: 2.5 }} />
+                        <Text style={styles(colors).heading}>
+                            {new Date(category.EntryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </View>
+                </View>
                 <View style={styles(colors).tabContainer}>
                     <ScrollView horizontal>
                         {category.Categories.map(cat => (
@@ -79,7 +169,12 @@ const StaffActivities = () => {
                                 ]}
                                 onPress={() => handleTabClick(index, cat.Category)}
                             >
-                                <Text style={styles(colors).tabText}>{cat.Category}</Text>
+                                <Text style={styles(colors).tabText}>
+                                    {cat.Category}
+                                    <Text style={{ color: colors.accent }}>
+                                        {"\n"}({getCategoryTotal(category, cat.Category)})
+                                    </Text>
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -89,7 +184,6 @@ const StaffActivities = () => {
         ));
     };
 
-    // Render details based on active category for a specific card
     const renderCategoryDetails = (category) => {
         const activeCategory = category.activeCategory || category.Categories[0].Category; // Default to the first category if no activeCategory set
         const cat = category.Categories.find(cat => cat.Category === activeCategory);
@@ -101,7 +195,20 @@ const StaffActivities = () => {
                 </View>
             ));
         }
-        return null;
+        return <Text>No staff details available.</Text>;
+    };
+
+    const getCategoryTotal = (category, categoryName) => {
+        let total = 0;
+
+        category.Categories.forEach(cat => {
+            if (cat.Category === categoryName) {
+                cat.StaffDetails.forEach(detail => {
+                    total += detail.Tonnage;
+                });
+            }
+        });
+        return total.toFixed(2); // Adjust as per your formatting needs
     };
 
     return (
@@ -153,9 +260,39 @@ const StaffActivities = () => {
                 />
             </View>
 
-            <ScrollView>
-                {renderStaffDetails()}
-            </ScrollView>
+            <Dropdown
+                data={reportDropDown}
+                value={reportDropDownValue}
+                labelField="label"
+                valueField="label"
+                placeholder="Select the One"
+                renderLeftIcon={() => (
+                    <MaterialIcons name="apple-keyboard-option"
+                        color={colors.accent} size={20}
+                        style={{ marginRight: 10, }}
+                    />
+                )}
+                onChange={item => {
+                    setReportDropDownValue(item.label);
+                }}
+                maxHeight={300}
+                style={[styles(colors).dropdown, { width: "55%", marginHorizontal: "auto", marginVertical: 20 }]}
+                placeholderStyle={styles(colors).placeholderStyle}
+                containerStyle={styles(colors).dropdownContainer}
+                selectedTextStyle={styles(colors).selectedTextStyle}
+                iconStyle={styles(colors).iconStyle}
+            />
+
+
+            {reportDropDownValue === "Individual Activities" ? (
+                <ScrollView>
+                    {renderStaffCategoryReport(staffCategoryMap)}
+                </ScrollView>
+            ) : (
+                <ScrollView>
+                    {renderOverAllStaffDetails()}
+                </ScrollView>
+            )}
 
         </View>
     )
@@ -218,43 +355,107 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
 
-    cardContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 15,
-        elevation: 3, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 1, height: 1 },
-        shadowOpacity: 0.3,
-        shadowRadius: 2,
-        marginHorizontal: 15,
-        marginVertical: 10
+
+    staffReportContainer: {
+        backgroundColor: colors.background,
+        borderRadius: 10,
+        padding: 15,
+        marginVertical: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 2,
+        marginHorizontal: 10
     },
-    heading: {
+    staffReportName: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+    },
+    staffReportCategory: {
+        ...typography.body1(colors),
+        fontWeight: 'bold',
+    },
+    individualReportContainer: {
+        padding: 10,
+    },
+
+
+    listContent: {
+        paddingBottom: 16,
+    },
+    categoryContainer: {
+        marginBottom: 16,
+    },
+    categoryTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        color: colors.text,
+        marginBottom: 8,
+    },
+    staffDetails: {
+        marginBottom: 8,
+        paddingLeft: 16,
+    },
+    staffName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    staffInfo: {
+        fontSize: 14,
+        color: colors.text,
+    },
+
+
+
+
+    cardContainer: {
+        backgroundColor: colors.background,
+        borderRadius: 8,
+        shadowColor: colors.black, // iOS shadow
+        shadowOffset: {
+            width: 0,
+            height: 1
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 3, // Android shadow
+        padding: 10,
+        marginHorizontal: 15,
+        marginVertical: 10,
+    },
+    heading: {
+        textAlign: "center",
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+        marginLeft: 5,
     },
     tabContainer: {
         flexDirection: 'row',
         marginBottom: 10,
     },
     tabItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 15,
+        minWidth: 100,
+        maxWidth: 150,
+        padding: 8,
         marginRight: 10,
         borderRadius: 5,
-        backgroundColor: '#eee',
+        backgroundColor: colors.secondary,
     },
     activeTab: {
-        backgroundColor: colors.primary, // Change color for active tab
+        borderWidth: 1.5,
+        borderColor: colors.primary,
     },
     tabText: {
-        fontSize: 16,
+        textAlign: "center",
+        ...typography.body1(colors),
         fontWeight: 'bold',
-        color: '#333',
     },
+
     detailContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',

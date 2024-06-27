@@ -13,6 +13,7 @@ import DriverActivities from './Activities/DriverActivities';
 import GodownActivities from './Activities/GodownActivities';
 import DeliveryAvtivities from './Activities/DeliveryActivities';
 import StaffActivities from './Activities/StaffActivities';
+import InwardsActivities from './Activities/InwardsActivities';
 
 const Stack = createNativeStackNavigator();
 
@@ -87,6 +88,23 @@ const App = () => {
                     <Stack.Screen name="StaffActivities" component={StaffActivities}
                         options={{
                             title: "Staff Activities",
+                            headerShown: true,
+                            headerBlurEffect: true,
+                            headerStyle: {
+                                backgroundColor: colors.primary,
+                            },
+                            headerTintColor: colors.white,
+                            headerTitleStyle: {
+                                ...typography.h5(colors),
+                                fontWeight: '600',
+                                color: colors.white,
+                            }
+                        }}
+                    />
+
+                    <Stack.Screen name="InwardsActivities" component={InwardsActivities}
+                        options={{
+                            title: "Inwards Activities",
                             headerShown: true,
                             headerBlurEffect: true,
                             headerStyle: {

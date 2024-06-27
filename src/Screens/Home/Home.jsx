@@ -252,10 +252,21 @@ const HomeScreen = () => {
                                 onPress={() => {
                                     navigation.navigate('StaffActivities');
                                 }}>
-                                <Image source={require('../../../assets/images/staff-management.png')}
+                                <Image source={require('../../../assets/images/teamwork.png')}
                                     style={styles(colors).logo}
                                 />
                                 <Text style={styles(colors).text}>Staff Activities</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate('InwardsActivities');
+                                }}>
+                                <Image source={require('../../../assets/images/tool.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Inwards Activities</Text>
                             </TouchableOpacity>
                         </React.Fragment>
                     )}
