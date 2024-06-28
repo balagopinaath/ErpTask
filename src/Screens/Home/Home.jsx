@@ -1,18 +1,16 @@
-import { StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View, useColorScheme } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { customColors, typography } from '../../Constants/helper';
-import LocationIndicator from '../../Components/LocationIndicator';
+import { StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View, Modal, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../../Constants/api';
-import Icon from 'react-native-vector-icons/AntDesign'
+import Icon from 'react-native-vector-icons/AntDesign';
+
 import { useNavigation } from '@react-navigation/native';
-import { Modal } from 'react-native';
-import { Image } from 'react-native';
+import { typography } from '../../Constants/helper';
+import { useThemeContext } from '../../Context/ThemeContext';
+import { api } from '../../Constants/api';
+import LocationIndicator from '../../Components/LocationIndicator';
 
 const HomeScreen = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
+    const { colors, customStyles } = useThemeContext();
     const navigation = useNavigation();
 
     const [location, setLocation] = useState({ latitude: null, longitude: null });
@@ -151,7 +149,7 @@ const HomeScreen = () => {
     };
 
     return (
-        <View style={styles(colors).container}>
+        <View style={customStyles.container}>
             <View style={styles(colors).header}>
                 <Text style={styles(colors).headerContent}>Welcome, {name}</Text>
                 <TouchableOpacity onPress={() => logout()}>

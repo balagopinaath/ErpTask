@@ -1,21 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { customColors, typography } from '../Constants/helper';
+import { useThemeContext } from '../Context/ThemeContext';
+import { typography } from '../Constants/helper';
 import { api } from '../Constants/api';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import FontistoIcons from 'react-native-vector-icons/Fontisto';
 
 const GodownActivities = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
-
-    const screenWidth = Dimensions.get('window').width;
-    const marginHorizontal = screenWidth * 0.075;
-    const flexValue = screenWidth / 3;
-
+    const { colors, customStyles } = useThemeContext();
     const [godownData, setGodownData] = useState([])
 
     const currentDate = new Date();
@@ -31,31 +25,14 @@ const GodownActivities = () => {
     ];
     const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
 
-    const tabData = [
-        { label: "INWARD", value: 1 },
-        { label: "MANAGEMENT", value: 2 },
-        { label: "OUTWARD", value: 3 },
-    ];
-
     const [activeAccordion, setActiveAccordion] = useState(null);
-    const [activeTab, setActiveTab] = useState(tabData[0].value);
+    const [activeTab, setActiveTab] = useState();
     const [expandedEntry, setExpandedEntry] = useState(false);
+    const [expandedEntries, setExpandedEntries] = useState({});
 
     useEffect(() => {
         getGodownActivities(fromDate.toISOString(), toDate.toISOString(), dropDownValue);
     }, [fromDate, toDate, dropDownValue]);
-
-    const onFromDateChange = (event, selectedDate) => {
-        const currentDate = selectedDate || fromDate;
-        setShowFromPicker(Platform.OS === 'ios');
-        setFromDate(currentDate);
-    };
-
-    const onToDateChange = (event, selectedDate) => {
-        const currentDate = selectedDate || toDate;
-        setShowToPicker(Platform.OS === 'ios');
-        setToDate(currentDate);
-    };
 
     const getGodownActivities = async (from, to, dropValue) => {
         try {
@@ -73,6 +50,18 @@ const GodownActivities = () => {
         } catch (err) {
             console.log("Error fetching data:", err);
         }
+    };
+
+    const onFromDateChange = (event, selectedDate) => {
+        const currentDate = selectedDate || fromDate;
+        setShowFromPicker(Platform.OS === 'ios');
+        setFromDate(currentDate);
+    };
+
+    const onToDateChange = (event, selectedDate) => {
+        const currentDate = selectedDate || toDate;
+        setShowToPicker(Platform.OS === 'ios');
+        setToDate(currentDate);
     };
 
     const toggleEntry = (entryId) => {
@@ -98,7 +87,6 @@ const GodownActivities = () => {
             };
 
             day.DayEntries.forEach(entry => {
-                // console.log(entry.PurchaseTotal)
                 dailyTotal.inward = entry.PurchaseTotal;
                 dailyTotal.management = entry.Handle + entry.WGChecking;
                 dailyTotal.outward = entry.SalesTotal;
@@ -133,85 +121,63 @@ const GodownActivities = () => {
     const renderItem = ({ item }) => {
         const isActive = activeAccordion === item.EntryDate;
         const dailyTotal = totalsForDay[item.EntryDate];
+        const isExpanded = expandedEntries[item.EntryDate];
+
+        const updatedTabData = [
+            { label: "Inward", value: 1, total: dailyTotal.inward },
+            { label: "Management", value: 2, total: dailyTotal.management },
+            { label: "Outward", value: 3, total: dailyTotal.outward },
+        ];
 
         return (
             <View style={styles(colors).accordionContainer}>
                 {/* Header */}
-                <TouchableOpacity
-                    style={styles(colors).accordionHeader}
-                    onPress={() => setActiveAccordion(isActive ? null : item.EntryDate)}
-                >
-                    {/* Display Date and Totals */}
+                <View style={styles(colors).accordionHeader} >
                     <View style={styles(colors).accordionView}>
-                        <View style={{ flexDirection: "row" }}>
+                        <View style={styles(colors).accordionIconView}>
                             <Icon name="calendar-o" color={colors.accent}
                                 size={20}
-                                style={{ marginRight: 10 }}
                             />
-                            <Text style={styles(colors).accordionHeaderText}>
+                            <Text style={styles(colors).accordionIconText}>
                                 {new Date(item.EntryDate).toLocaleDateString('en-GB', {
                                     day: '2-digit',
                                     month: '2-digit'
                                 }).slice(0, 5)}
                             </Text>
                         </View>
-                        <View style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignContent: "center"
-                        }}>
-                            <Text style={{
-                                ...typography.body1(colors),
-                                marginLeft: marginHorizontal,
-                                marginRight: marginHorizontal,
-                                borderRightWidth: 2,
-                                paddingRight: 15,
-                                borderRightWidth: 2,
-                                borderRightColor: colors.text,
-                                borderLeftColor: colors.text,
-                                borderLeftWidth: 2,
-                                paddingLeft: 15,
-                            }}>{dailyTotal.inward}</Text>
-                            <Text style={{
-                                ...typography.body1(colors),
-                                marginRight: marginHorizontal,
-                                borderRightWidth: 2,
-                                paddingRight: 15,
-                                borderRightColor: colors.text,
-                            }}>{dailyTotal.management}</Text>
-                            <Text style={{
-                                ...typography.body1(colors),
-                                marginRight: marginHorizontal
-                            }}>{dailyTotal.outward}</Text>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-
-                {/* Expanded Content */}
-                {isActive && (
-                    <View style={styles(colors).accordionContent}>
-                        {/* Tabs */}
-                        <View style={styles(colors).tabContainer}>
-                            {tabData.map(tab => (
+                        <View style={styles(colors).accordionHeaderInner}>
+                            {updatedTabData.map(tab => (
                                 <TouchableOpacity
                                     key={tab.value}
                                     style={[
                                         styles(colors).tab,
                                         activeTab === tab.value && styles(colors).activeTab
                                     ]}
-                                    onPress={() => setActiveTab(tab.value)}
+                                    onPress={() => {
+                                        setActiveAccordion(isActive ? null : item.EntryDate)
+                                        setActiveTab(tab.value)
+                                    }}
                                 >
                                     <Text style={[
                                         styles(colors).tabText,
                                         activeTab === tab.value && styles(colors).activeTabText
-                                    ]}>{tab.label}</Text>
+                                    ]}>
+                                        {tab.label} {"\n"}
+                                        <Text style={styles(colors).accordionHeaderInnerTextHighlight}>{tab.total}</Text>
+
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
-                        </View>
 
+                        </View>
+                    </View>
+                </View>
+
+                {/* Expanded Content */}
+                {isActive && (
+                    <View>
                         {/* Day Entries */}
                         {item.DayEntries.map(entry => {
-
                             return (
                                 <View key={entry.Id} style={styles(colors).dayEntry}>
                                     <View style={styles(colors).entryContent}>
@@ -292,19 +258,19 @@ const GodownActivities = () => {
     };
 
     return (
-        <View style={styles(colors).container}>
+        <View style={customStyles.container}>
             <View style={styles(colors).userPickContainer}>
                 <TouchableOpacity
-                    style={styles(colors).datePicker}
+                    style={customStyles.datePicker}
                     onPress={() => setShowFromPicker(true)}
                 >
+                    <FontistoIcons name="date" color={colors.accent} size={20} />
                     <TextInput
                         maxFontSizeMultiplier={1.2}
-                        style={styles(colors).textInput}
+                        style={customStyles.textInput}
                         value={`${fromDate.getDate().toString().padStart(2, '0')}/${(fromDate.getMonth() + 1).toString().padStart(2, '0')}/${fromDate.getFullYear()}`}
                         editable={false}
                     />
-                    <Icon name="calendar" color={colors.accent} size={20} />
                     {showFromPicker && (
                         <DateTimePicker
                             testID="toDatePicker"
@@ -318,16 +284,16 @@ const GodownActivities = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles(colors).datePicker}
+                    style={customStyles.datePicker}
                     onPress={() => setShowToPicker(true)}
                 >
+                    <FontistoIcons name="date" color={colors.accent} size={20} />
                     <TextInput
                         maxFontSizeMultiplier={1.2}
-                        style={styles(colors).textInput}
+                        style={customStyles.textInput}
                         value={`${toDate.getDate().toString().padStart(2, '0')}/${(toDate.getMonth() + 1).toString().padStart(2, '0')}/${toDate.getFullYear()}`}
                         editable={false}
                     />
-                    <Icon name="calendar" color={colors.accent} size={20} />
                     {showToPicker && (
                         <DateTimePicker
                             value={toDate}
@@ -344,7 +310,7 @@ const GodownActivities = () => {
                     valueField="label"
                     placeholder="Select Location"
                     renderLeftIcon={() => (
-                        <Icon name="map-marker"
+                        <FontistoIcons name="map-marker-alt"
                             color={colors.accent} size={20}
                             style={{ marginRight: 10, }}
                         />
@@ -353,15 +319,15 @@ const GodownActivities = () => {
                         setDropDownValue(item.label);
                     }}
                     maxHeight={300}
-                    style={styles(colors).dropdown}
-                    placeholderStyle={styles(colors).placeholderStyle}
-                    containerStyle={styles(colors).dropdownContainer}
-                    selectedTextStyle={styles(colors).selectedTextStyle}
-                    iconStyle={styles(colors).iconStyle}
+                    style={customStyles.dropdown}
+                    placeholderStyle={customStyles.placeholderStyle}
+                    containerStyle={customStyles.dropdownContainer}
+                    selectedTextStyle={customStyles.selectedTextStyle}
+                    iconStyle={customStyles.iconStyle}
                 />
             </View>
 
-            <View style={styles(colors).totalsContainer}>
+            {/* <View style={styles(colors).totalsContainer}>
                 <View style={styles(colors).rowContainer}>
                     <View style={styles(colors).totalsInnerContainer}>
                         <Text style={styles(colors).totalsText}>Inwards </Text>
@@ -380,13 +346,13 @@ const GodownActivities = () => {
                         <Text style={styles(colors).totalsText}>{totals.outward}</Text>
                     </View>
                 </View>
-            </View>
+            </View> */}
 
-            <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 10 }}>
+            {/* <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 10 }}>
                 <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginLeft: 105 }}>Inwards</Text>
                 <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginRight: 20 }}>MG</Text>
                 <Text style={{ flex: flexValue, textAlign: "center", ...typography.body1(colors), marginRight: 20 }}>Outwards</Text>
-            </View>
+            </View> */}
 
             <FlatList
                 data={godownData}
@@ -406,55 +372,126 @@ const GodownActivities = () => {
 export default GodownActivities
 
 const styles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: 10,
-    },
     userPickContainer: {
+        padding: 10,
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "space-evenly",
         marginBottom: 20,
     },
-    datePicker: {
-        flex: 3.33,
-        height: 50,
-        flexDirection: 'row',
+    listContainer: {
+        paddingBottom: 20,
+    },
+    noDataContainer: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.secondary,
+        marginTop: 20,
+    },
+    noDataText: {
+        ...typography.h6(colors)
+    },
+    accordionContainer: {
         borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 5,
-        paddingHorizontal: 5,
-    },
-    textInput: {
-        ...typography.body1(colors),
-    },
-    dropdown: {
-        flex: 3.33,
-        height: 50,
-        borderColor: '#ddd',
-        borderWidth: 0.5,
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        backgroundColor: colors.secondary,
-    },
-    dropdownContainer: {
-        backgroundColor: colors.secondary,
-        borderColor: colors.textPrimary,
-        borderWidth: 0.5,
+        borderColor: colors.secondary,
+        marginHorizontal: 20,
         borderRadius: 10,
+        marginBottom: 15,
     },
-    placeholderStyle: {
+    accordionHeader: {
+        backgroundColor: colors.secondary,
+        borderRadius: 5,
+        padding: 15,
+    },
+    accordionView: {
+        // justifyContent: "space-around"
+    },
+    accordionIconView: {
+        flexDirection: "row",
+    },
+    accordionIconText: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+        marginLeft: 10
+    },
+    accordionHeaderInner: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+    },
+
+
+    tab: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 15,
+    },
+    activeTab: {
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    tabText: {
+        textAlign: "center",
+        ...typography.body1(colors),
+        fontWeight: "bold",
+    },
+    activeTabText: {
+        textAlign: "center",
         ...typography.body1(colors),
     },
-    selectedTextStyle: {
-        ...typography.body1(colors),
+    accordionHeaderInnerTextHighlight: {
+        ...typography.h6(colors),
+        color: colors.accent,
+        fontWeight: "bold"
     },
-    iconStyle: {
-        width: 20,
-        height: 20,
+
+    dayEntry: {
+        // flexDirection: "column",
+        // padding: 10,
+        // borderBottomWidth: 1,
+        // borderBottomColor: colors.border,
     },
+    entryContent: {
+        // paddingLeft: 20,
+    },
+
+    card: {
+        backgroundColor: colors.background,
+        borderRadius: 10,
+        padding: 15,
+        marginVertical: 10,
+        // shadowColor: '#000',
+        // shadowOffset: {
+        //     width: 0,
+        //     height: 1
+        // },
+        // shadowOpacity: 0.22,
+        // shadowRadius: 2.22,
+        // elevation: 2,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    rowCardTitle: {
+        ...typography.h6(colors),
+    },
+    rowCardText: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+    },
+    details: {
+        marginVertical: 10,
+        paddingLeft: 10,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.accent,
+    },
+
+
+
+
+
+
+
     totalsContainer: {
         flexDirection: 'column',
         justifyContent: "center",
@@ -480,120 +517,20 @@ const styles = (colors) => StyleSheet.create({
     totalsText: {
         ...typography.body1(colors)
     },
-    listContainer: {
-        paddingBottom: 20,
-    },
-    noDataContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    noDataText: {
-        ...typography.h6(colors)
-    },
 
-    accordionContainer: {
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: colors.secondary,
-        marginHorizontal: 5,
-        borderRadius: 10
-    },
-    accordionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        backgroundColor: colors.card,
-        borderRadius: 5,
-    },
-    accordionView: {
-        flexDirection: "row"
-    },
-    accordionHeaderText: {
-        ...typography.body1(colors),
-        fontWeight: 'bold',
-        color: colors.text,
-    },
 
-    accordionContent: {
-        padding: 15,
-        backgroundColor: colors.card,
-        borderRadius: 5,
-        marginTop: 5,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginBottom: 10,
-    },
-    tab: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 20,
-        backgroundColor: colors.tabBackground,
-    },
-    activeTab: {
-        backgroundColor: colors.primary,
-    },
-    tabText: {
-        ...typography.body1(colors),
-        color: colors.accent,
-        fontWeight: 'bold',
-    },
-    activeTabText: {
-        ...typography.body1(colors),
-    },
 
-    dayEntry: {
-        flexDirection: "column",
-        padding: 10,
-        // borderBottomWidth: 1,
-        // borderBottomColor: colors.border,
-    },
+
+
     entryHeader: {
         flexDirection: 'row',
         // alignContent: 'center',
         // alignItems: 'center',
         paddingVertical: 10,
     },
-    entryContent: {
-        paddingLeft: 20,
-    },
 
-    card: {
-        backgroundColor: colors.background,
-        borderRadius: 10,
-        padding: 15,
-        marginVertical: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1
-        },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
-        elevation: 2,
-    },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    details: {
-        marginTop: 10,
-        paddingLeft: 10,
-        borderLeftWidth: 2,
-        borderLeftColor: colors.accent,
-    },
-    rowCardTitle: {
-        ...typography.body1(colors),
-        fontWeight: 'bold',
-        marginRight: 10,
-    },
-    rowCardText: {
-        ...typography.body1(colors),
-    },
+
+
+
+
 })

@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, ActivityIndicator, Image } from 'react-native';
-import { customColors, typography } from './Constants/helper';
+import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { typography } from './Constants/helper';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useThemeContext } from './Context/ThemeContext';
 
 const SplashScreen = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
+    const { colors, customStyles } = useThemeContext();
     const navigation = useNavigation();
 
     const [loading, setLoading] = useState(true);

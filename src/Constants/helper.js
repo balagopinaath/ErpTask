@@ -1,5 +1,30 @@
-import { Dimensions } from "react-native"
-const deviceWidth = Dimensions.get('window').width
+import { Dimensions, PixelRatio } from "react-native"
+
+const { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
+
+const baseWidth = 375;
+const baseHeight = 667;
+
+// Responsive font size function
+export const responsiveFontSize = (baseSize) => {
+    return baseSize * (deviceWidth / baseWidth);
+};
+// Responsive width function
+export const responsiveWidth = (value) => {
+    return PixelRatio.roundToNearestPixel((deviceWidth * value) / 100);
+};
+
+// Responsive height function
+export const responsiveHeight = (value) => {
+    return PixelRatio.roundToNearestPixel((deviceHeight * value) / 100);
+};
+
+export const customFontSize = {
+    small: 14,
+    medium: 16,
+    large: 18,
+    xlarge: 20,
+}
 
 export const customFonts = {
     poppinsBlack: "Poppins-Black.ttf",
@@ -23,6 +48,8 @@ export const customColors = {
         textSecondary: '#757575',
         black: "#000000",
         white: "#ffffff",
+        borderColor: '#A9A9A9',
+        grey: "#ddd"
     },
     dark: {
         background: "#000000",
@@ -33,20 +60,10 @@ export const customColors = {
         textSecondary: '#b0b0b0',
         black: "#000000",
         white: "#ffffff",
+        borderColor: '#A9A9A9',
+        grey: "#ddd"
     },
 }
-
-export const customFontSize = {
-    small: 14,
-    medium: 16,
-    large: 18,
-    xlarge: 20,
-}
-
-export const responsiveFontSize = (baseSize) => {
-    const baseWidth = 375;
-    return baseSize * (deviceWidth / baseWidth);
-};
 
 export const typography = {
     h1: (colors) => ({
