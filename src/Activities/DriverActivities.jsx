@@ -320,7 +320,7 @@ const DriverActivities = () => {
                                     </View>
                                     <View style={{ flexDirection: "row" }}>
                                         <Icon name='shopping-bag' size={20} color={colors.accent} />
-                                        <Text style={styles(colors).cardTitle}>{driverActivityTotals.driverTotals?.[driver.DriverName] || 0}</Text>
+                                        <Text style={styles(colors).cardTitle}>{(driverActivityTotals.driverTotals?.[driver.DriverName] || 0).toFixed(2)}</Text>
                                     </View>
                                 </View>
                                 <View style={styles(colors).tabsContainer}>

@@ -1,15 +1,15 @@
-import React, { createRef, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, ScrollView, Image, Animated, Modal } from 'react-native';
-import { api } from '../Constants/api';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { customColors, typography } from '../Constants/helper';
 import ImageViewer from 'react-native-image-zoom-viewer';
+import Icon from 'react-native-vector-icons/FontAwesome';
+
+import { api } from '../Constants/api';
+import { useThemeContext } from '../Context/ThemeContext';
+import { typography } from '../Constants/helper';
 
 const InwardsActivities = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
+    const { colors, customStyles } = useThemeContext();
 
     const [organizedData, setOrganizedData] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -52,14 +52,6 @@ const InwardsActivities = () => {
     return (
         <View style={styles(colors).container}>
             <View style={styles(colors).userPickContainer}>
-                {organizedData.map((item, index) => (
-                    <View key={index} style={{ flexDirection: "row" }}>
-                        <Icon name='clock-o' size={20} color={colors.accent} style={{ marginTop: 2.5 }} />
-                        <Text style={styles(colors).imageContainerText}>
-                            {new Date(item.modifiedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
-                    </View>
-                ))}
                 <Dropdown
                     data={dropDownData}
                     value={dropDownValue}
@@ -82,11 +74,19 @@ const InwardsActivities = () => {
                     selectedTextStyle={styles(colors).selectedTextStyle}
                     iconStyle={styles(colors).iconStyle}
                 />
+
+                {organizedData.map((item, index) => (
+                    <View key={index} style={{ flexDirection: "row", marginTop: 15, }}>
+                        <Icon name='clock-o' size={20} color={colors.accent} style={{ marginTop: 2.5 }} />
+                        <Text style={styles(colors).imageContainerText}>
+                            Updated at: {new Date(item.modifiedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </View>
+                ))}
             </View>
 
-
-            <ScrollView>
-                {organizedData.map((item, index) => (
+            {organizedData.map((item, index) => (
+                <ScrollView>
                     <TouchableOpacity
                         key={index}
                         style={styles(colors).imageContainer}
@@ -97,13 +97,13 @@ const InwardsActivities = () => {
                     >
                         <Image
                             source={{ uri: item.url }}
-                            width={"90%"}
+                            width={"100%"}
                             height={550}
                             resizeMode='contain'
                         />
                     </TouchableOpacity>
-                ))}
-            </ScrollView>
+                </ScrollView>
+            ))}
 
             <Modal visible={modalVisible} transparent={true} onRequestClose={() => setModalVisible(false)}>
                 <ImageViewer imageUrls={imageUrls} index={selectedImageIndex} />
@@ -122,7 +122,6 @@ const styles = (colors) => StyleSheet.create({
         padding: 10,
     },
     userPickContainer: {
-        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 10,

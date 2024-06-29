@@ -18,6 +18,8 @@ export const api = {
 
     getStaffActivities: (fromDate, reqLocation) => `${endPoint}api/staffActivities?reqDate=${fromDate}&reqLocation=${reqLocation}`,
 
+    getweightCheckActivity: (reqDate, reqLocation) => `${endPoint}api/weightCheckActivity?reqDate=${reqDate}&reqLocation=${reqLocation}`,
+
     inwardActivity: endPoint + "api/inwardActivity",
     machineOutern: endPoint + "api/machineOutern",
 }

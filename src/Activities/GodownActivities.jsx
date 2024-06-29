@@ -27,7 +27,7 @@ const GodownActivities = () => {
 
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [activeTab, setActiveTab] = useState();
-    const [expandedEntry, setExpandedEntry] = useState(false);
+    const [expandedEntry, setExpandedEntry] = useState(null);
     const [expandedEntries, setExpandedEntries] = useState({});
 
     useEffect(() => {
@@ -154,8 +154,14 @@ const GodownActivities = () => {
                                         activeTab === tab.value && styles(colors).activeTab
                                     ]}
                                     onPress={() => {
-                                        setActiveAccordion(isActive ? null : item.EntryDate)
-                                        setActiveTab(tab.value)
+                                        if (activeAccordion === item.EntryDate && activeTab === tab.value) {
+                                            setActiveAccordion(null);
+                                            setActiveTab(null);
+                                        } else {
+                                            // If a different tab is tapped, set it as active
+                                            setActiveAccordion(item.EntryDate);
+                                            setActiveTab(tab.value);
+                                        }
                                     }}
                                 >
                                     <Text style={[
@@ -425,8 +431,8 @@ const styles = (colors) => StyleSheet.create({
         borderRadius: 15,
     },
     activeTab: {
-        borderWidth: 1,
-        borderColor: colors.primary,
+        // borderWidth: 1,
+        // borderColor: colors.primary,
     },
     tabText: {
         textAlign: "center",
@@ -451,6 +457,8 @@ const styles = (colors) => StyleSheet.create({
     },
     entryContent: {
         // paddingLeft: 20,
+        // borderBottomWidth: 1,
+        // borderBottomColor: colors.border,
     },
 
     card: {

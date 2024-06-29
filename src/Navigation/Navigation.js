@@ -17,6 +17,7 @@ import InwardsActivities from '../Activities/InwardsActivities';
 import StaffActivities from '../Activities/StaffActivities';
 import DeliveryActivities from '../Activities/DeliveryActivities';
 import LoginScreen from '../Screens/Login/Login';
+import WCActivities from '../Activities/WCActivities';
 
 const Stack = createNativeStackNavigator();
 
@@ -62,6 +63,11 @@ const Navigation = () => {
                     <Stack.Screen name="InwardsActivities"
                         component={InwardsActivities}
                         options={getScreenOption(colors, "Inwards Activities")}
+                    />
+
+                    <Stack.Screen name="WCActivities"
+                        component={WCActivities}
+                        options={getScreenOption(colors, "Weight Check Activities")}
                     />
 
                 </Stack.Navigator>

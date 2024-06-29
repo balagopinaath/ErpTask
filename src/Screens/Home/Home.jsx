@@ -266,6 +266,17 @@ const HomeScreen = () => {
                                 />
                                 <Text style={styles(colors).text}>Inwards Activities</Text>
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate("WCActivities");
+                                }}>
+                                <Image source={require('../../../assets/images/measure.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Weight Checks</Text>
+                            </TouchableOpacity>
                         </React.Fragment>
                     )}
                 </View>

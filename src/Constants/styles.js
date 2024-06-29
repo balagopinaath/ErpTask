@@ -74,6 +74,17 @@ export const globalStyles = (colors) => {
             height: responsiveHeight(2.5),
         },
 
+        noDataContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 20,
+        },
+        noDataText: {
+            textAlign: "center",
+            ...typography.h6(colors)
+        },
+
 
 
         shadow: {
