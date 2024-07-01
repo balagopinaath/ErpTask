@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { api } from '../Constants/api';
 import { useThemeContext } from '../Context/ThemeContext';
 import { typography } from '../Constants/helper';
+import { TouchableWithoutFeedback } from 'react-native';
 
 const InwardsActivities = () => {
     const { colors, customStyles } = useThemeContext();
@@ -26,6 +27,7 @@ const InwardsActivities = () => {
     }, [dropDownValue]);
 
     const getActivities = async () => {
+        console.log(api.inwardActivity)
         try {
             let response
             if (dropDownValue === "INWARD") {
@@ -86,27 +88,30 @@ const InwardsActivities = () => {
             </View>
 
             {organizedData.map((item, index) => (
-                <ScrollView>
-                    <TouchableOpacity
-                        key={index}
-                        style={styles(colors).imageContainer}
-                        onPress={() => {
-                            setSelectedImageIndex(index);
-                            setModalVisible(true);
-                        }}
-                    >
-                        <Image
-                            source={{ uri: item.url }}
-                            width={"100%"}
-                            height={550}
-                            resizeMode='contain'
-                        />
-                    </TouchableOpacity>
-                </ScrollView>
+                <TouchableWithoutFeedback
+                    key={index}
+                    style={styles(colors).imageContainer}
+                    onPress={() => {
+                        setSelectedImageIndex(index);
+                        setModalVisible(true);
+                    }}
+                >
+                    <Image
+                        source={{ uri: item.url }}
+                        style={styles(colors).image}
+                        resizeMode="cover"
+                    />
+                </TouchableWithoutFeedback>
             ))}
 
-            <Modal visible={modalVisible} transparent={true} onRequestClose={() => setModalVisible(false)}>
-                <ImageViewer imageUrls={imageUrls} index={selectedImageIndex} />
+            <Modal visible={modalVisible}
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <ImageViewer
+                    imageUrls={imageUrls}
+                    index={selectedImageIndex}
+                />
             </Modal>
 
         </View>
@@ -152,8 +157,14 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
     imageContainer: {
-        alignItems: "center",
-        marginVertical: 20
+        marginBottom: 16,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: colors.background,
+    },
+    image: {
+        width: "100%",
+        height: "100%",
     },
     imageContainerText: {
         ...typography.h6(colors),

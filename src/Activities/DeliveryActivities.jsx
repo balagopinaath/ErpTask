@@ -219,7 +219,8 @@ const styles = (colors) => StyleSheet.create({
         elevation: 2,
     },
     headingText: {
-        ...typography.h5(colors),
+        ...typography.h4(colors),
+        color: colors.primary,
         fontWeight: 'bold',
         marginBottom: 10,
     },
@@ -238,6 +239,7 @@ const styles = (colors) => StyleSheet.create({
     },
     labelInnerText: {
         ...typography.h6(colors),
-        fontWeight: "bold"
+        fontWeight: "bold",
+        color: colors.accent,
     },
 })

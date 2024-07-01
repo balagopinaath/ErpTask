@@ -276,7 +276,7 @@ const StaffActivities = () => {
                     setReportDropDownValue(item.label);
                 }}
                 maxHeight={300}
-                style={[styles(colors).dropdown, { width: "55%", marginHorizontal: "auto", marginVertical: 20 }]}
+                style={[styles(colors).dropdown, { width: "75%", marginHorizontal: "auto", marginVertical: 20 }]}
                 placeholderStyle={styles(colors).placeholderStyle}
                 containerStyle={styles(colors).dropdownContainer}
                 selectedTextStyle={styles(colors).selectedTextStyle}
