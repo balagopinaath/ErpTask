@@ -20,6 +20,7 @@ const DriverActivities = () => {
 
     const [categoryData, setCategoryData] = useState([]);
     const [tripWiseData, setTripWiseData] = useState([]);
+    const [timeWiseData, setTimeWiseData] = useState([]);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -34,11 +35,13 @@ const DriverActivities = () => {
         { key: 'abstract', title: 'Abstract' },
         { key: 'category', title: 'Godown Wise' },
         { key: 'tripWise', title: 'Trip Wise' },
+        { key: 'timeWise', title: 'Time Wise' },
     ]);
 
     useEffect(() => {
         getTripWiseData(selectedDate.toISOString(), locationDropDownValue);
         getDriverData(selectedDate.toISOString(), locationDropDownValue);
+        getTimeWiseData(selectedDate.toISOString(), locationDropDownValue);
     }, [selectedDate, locationDropDownValue]);
 
     const getTripWiseData = async (from, dropValue) => {
@@ -59,6 +62,18 @@ const DriverActivities = () => {
             const jsonData = await response.json();
             if (jsonData.success) {
                 setCategoryData(jsonData.data);
+            }
+        } catch (err) {
+            console.log("Error fetching data:", err);
+        }
+    }
+
+    const getTimeWiseData = async (from, dropValue) => {
+        try {
+            const response = await fetch(api.getTimeBasedDriverActivities(from, dropValue));
+            const jsonData = await response.json();
+            if (jsonData.success) {
+                setTimeWiseData(jsonData.data);
             }
         } catch (err) {
             console.log("Error fetching data:", err);
@@ -338,11 +353,49 @@ const DriverActivities = () => {
         );
     };
 
+    const renderTimeBased = () => {
+
+        return (
+            <ScrollView>
+                {timeWiseData.map((item, index) => (
+                    <View key={index} style={styles(colors).timeContainer}>
+                        <Text style={styles(colors).timeEventTime}>{new Date(item.EventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                        {item.Trips.map((trip, tripIndex) => (
+                            <View key={tripIndex} style={styles(colors).timeTripContainer}>
+                                <View style={{}}>
+                                    <Text style={styles(colors).timeText}>
+                                        <Icon name='user-o' size={20} color={colors.accent} />
+                                        &nbsp;{trip.DriverName}
+                                    </Text>
+                                    <Text style={styles(colors).timeText}>
+                                        <Icon name='building-o' size={20} color={colors.accent} />
+                                        &nbsp;{trip.TripCategory}
+                                    </Text>
+                                </View>
+                                <View style={{}}>
+                                    <Text style={styles(colors).timeText}>
+                                        <FeatherIcon name='truck' size={20} color={colors.accent} />
+                                        &nbsp;{trip.TripNumber}
+                                    </Text>
+                                    <Text style={styles(colors).timeText}>
+                                        <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                        &nbsp;{trip.TonnageValue}
+                                    </Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                ))}
+            </ScrollView>
+        )
+    }
+
 
     const renderScene = SceneMap({
         abstract: renderAbstract,
         category: renderCategoryData,
         tripWise: renderTripWiseData,
+        timeWise: renderTimeBased,
     });
 
     const renderTabBar = props => (
@@ -350,9 +403,14 @@ const DriverActivities = () => {
             {...props}
             indicatorStyle={{ backgroundColor: colors.accent }}
             style={{ backgroundColor: colors.primary }}
-            labelStyle={{ color: colors.text }}
-            activeColor={colors.white}
-            inactiveColor={colors.inactive}
+            // labelStyle={{ color: colors.text }}
+            // activeColor={colors.white}
+            // inactiveColor={colors.inactive}
+            renderLabel={({ route, focused, color }) => (
+                <Text style={[styles(colors).tabLabel, { color: focused ? colors.white : colors.inactive }]}>
+                    {route.title}
+                </Text>
+            )}
         />
     );
 
@@ -472,6 +530,11 @@ const styles = (colors) => StyleSheet.create({
     iconStyle: {
         width: 20,
         height: 20,
+    },
+    tabLabel: {
+        textAlign: "center",
+        ...typography.body1(colors),
+        fontWeight: "bold",
     },
 
 
@@ -639,6 +702,29 @@ const styles = (colors) => StyleSheet.create({
         fontWeight: 'bold',
         ...typography.h6(colors),
         marginLeft: 10,
+    },
+
+    timeContainer: {
+        borderWidth: 1,
+        borderColor: colors.grey,
+        borderRadius: 5,
+        backgroundColor: colors.background,
+        marginHorizontal: 20,
+        marginVertical: 20,
+        padding: 10,
+    },
+    timeEventTime: {
+        ...typography.h6(colors),
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    timeTripContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 15
+    },
+    timeText: {
+        ...typography.h6(colors),
     },
 
 });

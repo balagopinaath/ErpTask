@@ -277,6 +277,17 @@ const HomeScreen = () => {
                                 />
                                 <Text style={styles(colors).text}>Weight Checks</Text>
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate("OverAllAbstract");
+                                }}>
+                                <Image source={require('../../../assets/images/abstract-shape.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Abstracts</Text>
+                            </TouchableOpacity>
                         </React.Fragment>
                     )}
                 </View>

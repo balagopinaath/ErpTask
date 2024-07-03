@@ -152,10 +152,10 @@ const styles = (colors) =>
         card: {
             width: "90%",
             alignSelf: 'center',
-            backgroundColor: colors.background === '#000000' ? colors.black : colors.white,
+            backgroundColor: colors.background === colors.black ? colors.black : colors.white,
             borderRadius: 10,
             padding: 15,
-            shadowColor: colors.background === "#000000" ? colors.white : colors.black,
+            shadowColor: colors.background === colors.black ? colors.black : colors.white,
             shadowOffset: {
                 width: 0,
                 height: 2,

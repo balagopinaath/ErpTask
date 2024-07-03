@@ -4521,6 +4521,11 @@ react-native-image-pan-zoom@^2.1.12:
   resolved "https://registry.npmjs.org/react-native-image-pan-zoom/-/react-native-image-pan-zoom-2.1.12.tgz"
   integrity sha512-BF66XeP6dzuANsPmmFsJshM2Jyh/Mo1t8FsGc1L9Q9/sVP8MJULDabB1hms+eAoqgtyhMr5BuXV3E1hJ5U5H6Q==
 
+react-native-image-preview-reanimated@^0.5.2:
+  version "0.5.2"
+  resolved "https://registry.npmjs.org/react-native-image-preview-reanimated/-/react-native-image-preview-reanimated-0.5.2.tgz"
+  integrity sha512-otiXvrrt721d/+ufjEdsfZGbvAsa7UDls7nNBV8jlx8+qIwXYAV+4j6MsJzbu1hEu20I++iHFak52peJ/rw+xg==
+
 react-native-image-zoom-viewer@^3.0.1:
   version "3.0.1"
   resolved "https://registry.npmjs.org/react-native-image-zoom-viewer/-/react-native-image-zoom-viewer-3.0.1.tgz"

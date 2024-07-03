@@ -73,7 +73,6 @@ export const globalStyles = (colors) => {
             width: responsiveWidth(2.5),
             height: responsiveHeight(2.5),
         },
-
         noDataContainer: {
             flex: 1,
             justifyContent: 'center',
@@ -86,11 +85,8 @@ export const globalStyles = (colors) => {
         },
 
 
-
         shadow: {
-            shadowColor: colors.background === colors.black
-                ? colors.white
-                : colors.black,
+            shadowColor: '#000000',
             shadowOffset: {
                 width: 0,
                 height: 1,
@@ -122,6 +118,14 @@ export const globalStyles = (colors) => {
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
             elevation: 5,
-        }
+        },
+
+        card: {
+            backgroundColor: colors.background,
+            borderRadius: 10,
+            padding: 15,
+            margin: 15,
+            ...this.shadow3,
+        },
     })
 }

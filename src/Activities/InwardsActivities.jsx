@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Animated, Modal, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { PreviewModal } from 'react-native-image-preview-reanimated';
+import ImageZoom from 'react-native-image-pan-zoom';
 
 import { api } from '../Constants/api';
 import { useThemeContext } from '../Context/ThemeContext';
 import { typography } from '../Constants/helper';
 import { TouchableWithoutFeedback } from 'react-native';
+import { Button } from 'react-native';
 
 const InwardsActivities = () => {
     const { colors, customStyles } = useThemeContext();
 
     const [organizedData, setOrganizedData] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const dropDownData = [
         { label: "INWARD", value: 1 },
@@ -27,7 +30,7 @@ const InwardsActivities = () => {
     }, [dropDownValue]);
 
     const getActivities = async () => {
-        console.log(api.inwardActivity)
+        // console.log(api.inwardActivity)
         try {
             let response
             if (dropDownValue === "INWARD") {
@@ -52,7 +55,7 @@ const InwardsActivities = () => {
 
 
     return (
-        <View style={styles(colors).container}>
+        <View style={customStyles.container}>
             <View style={styles(colors).userPickContainer}>
                 <Dropdown
                     data={dropDownData}
@@ -90,30 +93,40 @@ const InwardsActivities = () => {
             {organizedData.map((item, index) => (
                 <TouchableWithoutFeedback
                     key={index}
-                    style={styles(colors).imageContainer}
                     onPress={() => {
                         setSelectedImageIndex(index);
-                        setModalVisible(true);
+                        setIsModalOpen(true);
                     }}
                 >
-                    <Image
-                        source={{ uri: item.url }}
-                        style={styles(colors).image}
-                        resizeMode="cover"
-                    />
+                    <View style={styles(colors).imageContainer}>
+                        <ImageZoom
+                            cropWidth={Dimensions.get('window').width}
+                            cropHeight={Dimensions.get('window').height}
+                            imageWidth={Dimensions.get('window').width}
+                            imageHeight={200}
+                        >
+                            <Image
+                                style={{ width: Dimensions.get('window').width, height: 200 }}
+                                source={{ uri: item.url }}
+                                resizeMode="cover"
+                            />
+                        </ImageZoom>
+                    </View>
                 </TouchableWithoutFeedback>
             ))}
 
-            <Modal visible={modalVisible}
-                transparent={true}
-                onRequestClose={() => setModalVisible(false)}
-            >
+            <Modal visible={isModalOpen} transparent={true} onRequestClose={() => setIsModalOpen(false)}>
                 <ImageViewer
-                    imageUrls={imageUrls}
+                    enablePreload={true}
                     index={selectedImageIndex}
+                    imageUrls={imageUrls}
+                    useNativeDriver={true}
+                    onSwipeDown={() => setIsModalOpen(false)}
+                    enableSwipeDown={true}
+                    saveToLocalByLongPress={true}
+                    enableImageZoom={true}
                 />
             </Modal>
-
         </View>
     )
 }
@@ -121,14 +134,10 @@ const InwardsActivities = () => {
 export default InwardsActivities
 
 const styles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: 10,
-    },
     userPickContainer: {
         justifyContent: 'space-between',
         alignItems: 'center',
+        padding: 10,
         marginBottom: 10,
     },
     dropdown: {
@@ -157,14 +166,16 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
     imageContainer: {
-        marginBottom: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 15,
         borderRadius: 8,
         overflow: 'hidden',
-        backgroundColor: colors.background,
     },
     image: {
         width: "100%",
-        height: "100%",
+        height: 500,
+        borderRadius: 8,
     },
     imageContainerText: {
         ...typography.h6(colors),
