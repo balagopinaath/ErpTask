@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
+
 import { useThemeContext } from '../Context/ThemeContext';
 import { typography } from '../Constants/helper';
 import { api } from '../Constants/api';
+import { formatTime } from '../Constants/utils';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { ScrollView } from 'react-native';
+import AntIcon from 'react-native-vector-icons/AntDesign';
 
 const WCActivities = () => {
     const { colors, customStyles } = useThemeContext();
@@ -26,7 +29,6 @@ const WCActivities = () => {
     }, [selectedDate, dropDownValue]);
 
     const getWeightCheck = async (date, dropValue) => {
-        // console.log(api.getweightCheckActivity(date, dropValue))
         try {
             const response = await fetch(api.getweightCheckActivity(date, dropValue));
             const jsonData = await response.json();
@@ -50,15 +52,31 @@ const WCActivities = () => {
         }
     };
 
-
     const renderActivityCards = () => {
         return data.map((activity, index) => (
             <View key={index} style={[styles(colors).card, styles(colors).cardContainer]}>
-                <Text style={styles(colors).cardHead}>
-                    {new Date(activity.EntryAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={styles(colors).cardHead}>
+                        <AntIcon
+                            name="clockcircleo"
+                            size={20}
+                            color={colors.primary}
+                        />&nbsp;
+                        {formatTime(activity.StartTime)}
+                    </Text>
+
+                    <Text style={styles(colors).cardHead}>
+                        <AntIcon
+                            name="clockcircleo"
+                            size={20}
+                            color={colors.primary}
+                        />&nbsp;
+                        {formatTime(activity.EndTime)}
+                    </Text>
+                </View>
+
                 <View style={styles(colors).activityDetails}>
-                    <View style={styles(colors).activityDetail}>
+                    {/* <View style={styles(colors).activityDetail}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', }}>
                             <Text style={styles(colors).detailLabel}>Start Time: </Text>
                             <Text style={styles(colors).detailValue}>
@@ -72,7 +90,7 @@ const WCActivities = () => {
                                 {new Date(activity.EndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
                         </View>
-                    </View>
+                    </View> */}
 
                     <View style={styles(colors).activityDetail}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', }}>
@@ -89,12 +107,17 @@ const WCActivities = () => {
                         <Text style={styles(colors).detailLabel}>Checked By: </Text>
                         <Text style={styles(colors).detailValue}>{activity.WeingtCheckedBy}</Text>
                     </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', }}>
+                        <Text style={styles(colors).detailLabel}>Stock: </Text>
+                        <Text style={[styles(colors).detailValue, { flex: 1, }]} numberOfLines={2} >{activity.StockItem}</Text>
+                    </View>
+
+
                 </View>
             </View>
         ));
     };
-
-
 
     return (
         <View style={customStyles.container}>
@@ -145,7 +168,6 @@ const WCActivities = () => {
                 />
             </View>
 
-
             <ScrollView>
                 <View style={styles(colors).activityCardsContainer}>
                     {data.length === 0 ? (
@@ -157,9 +179,6 @@ const WCActivities = () => {
                     )}
                 </View>
             </ScrollView>
-
-
-
         </View>
     )
 }
@@ -216,8 +235,6 @@ const styles = (colors) => StyleSheet.create({
         width: 20,
         height: 20,
     },
-
-
 
     card: {
         backgroundColor: colors.background,

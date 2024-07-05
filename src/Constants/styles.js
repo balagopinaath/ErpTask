@@ -75,13 +75,37 @@ export const globalStyles = (colors) => {
         },
         noDataContainer: {
             flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: 20,
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 50,
         },
         noDataText: {
             textAlign: "center",
-            ...typography.h6(colors)
+            ...typography.h6(colors),
+            flexWrap: "wrap"
+        },
+
+        card: {
+            backgroundColor: colors.background === "#000000" ? colors.black : colors.white,
+            borderRadius: 10,
+            padding: 15,
+            marginVertical: 10,
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 1
+            },
+            shadowOpacity: 0.22,
+            shadowRadius: 2.22,
+            elevation: 2,
+            marginHorizontal: 15,
+            marginVertical: 25,
+        },
+
+        tabLabel: {
+            textAlign: "center",
+            ...typography.body1(colors),
+            fontWeight: "bold",
         },
 
 
@@ -120,12 +144,5 @@ export const globalStyles = (colors) => {
             elevation: 5,
         },
 
-        card: {
-            backgroundColor: colors.background,
-            borderRadius: 10,
-            padding: 15,
-            margin: 15,
-            ...this.shadow3,
-        },
     })
 }

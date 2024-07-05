@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Animated, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Animated, Modal, Dimensions, Linking } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { PreviewModal } from 'react-native-image-preview-reanimated';
 import ImageZoom from 'react-native-image-pan-zoom';
+
+// import WebView from 'react-native-webview';
+import WebView from 'react-native-webview';
 
 import { api } from '../Constants/api';
 import { useThemeContext } from '../Context/ThemeContext';
@@ -30,7 +33,7 @@ const InwardsActivities = () => {
     }, [dropDownValue]);
 
     const getActivities = async () => {
-        // console.log(api.inwardActivity)
+        console.log(api.inwardActivity)
         try {
             let response
             if (dropDownValue === "INWARD") {
@@ -52,6 +55,28 @@ const InwardsActivities = () => {
     const imageUrls = organizedData.map(item => ({
         url: item.url,
     }));
+
+    const openInBrowser = (url) => {
+        Linking.openURL(url).catch((err) => console.error('An error occurred', err));
+    };
+
+    const renderImageItems = () => {
+        return organizedData.map((item, index) => (
+            <TouchableOpacity key={index} onPress={() => setIsModalOpen(true)}>
+                <View style={styles.imageContainer}>
+                    <WebView
+                        source={{ uri: item.url }}
+                        style={styles.webViewStyle}
+                        originWhitelist={['*']}
+                        allowsFullscreenVideo={true}
+                        javaScriptEnabled={true}
+                        domStorageEnabled={true}
+                        scalesPageToFit={true}
+                    />
+                </View>
+            </TouchableOpacity>
+        ));
+    };
 
 
     return (
@@ -90,42 +115,36 @@ const InwardsActivities = () => {
                 ))}
             </View>
 
-            {organizedData.map((item, index) => (
-                <TouchableWithoutFeedback
-                    key={index}
-                    onPress={() => {
-                        setSelectedImageIndex(index);
-                        setIsModalOpen(true);
-                    }}
-                >
-                    <View style={styles(colors).imageContainer}>
-                        <ImageZoom
-                            cropWidth={Dimensions.get('window').width}
-                            cropHeight={Dimensions.get('window').height}
-                            imageWidth={Dimensions.get('window').width}
-                            imageHeight={200}
-                        >
-                            <Image
-                                style={{ width: Dimensions.get('window').width, height: 200 }}
-                                source={{ uri: item.url }}
-                                resizeMode="cover"
-                            />
-                        </ImageZoom>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {organizedData.map((item, index) => (
+                    <View key={index} style={styles(colors).imageContainer}>
+                        <WebView
+                            source={{ uri: item.url }}
+                            style={{ width: Dimensions.get('window').width, height: 500 }}
+                            originWhitelist={['*']}
+                            allowsFullscreenVideo={true}
+                            javaScriptEnabled={true}
+                            // domStorageEnabled={true}
+                            // scalesPageToFit={true}
+                            scrollEnabled={true} // Enable WebView scrolling
+                        />
                     </View>
-                </TouchableWithoutFeedback>
-            ))}
+                ))}
+            </ScrollView>
 
             <Modal visible={isModalOpen} transparent={true} onRequestClose={() => setIsModalOpen(false)}>
-                <ImageViewer
-                    enablePreload={true}
-                    index={selectedImageIndex}
-                    imageUrls={imageUrls}
-                    useNativeDriver={true}
-                    onSwipeDown={() => setIsModalOpen(false)}
-                    enableSwipeDown={true}
-                    saveToLocalByLongPress={true}
-                    enableImageZoom={true}
-                />
+                <View style={{ flex: 1, backgroundColor: 'black' }}>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsModalOpen(false)}>
+                        <WebView
+                            source={{ uri: organizedData[selectedImageIndex]?.url }}
+                            // style={{ flex: 1 }}
+                            useWebKit={true} // Enable WebKit for pinch zoom support
+                            allowsFullscreenVideo={true} // Allow fullscreen video
+                            javaScriptEnabled={true} // Enable JavaScript in WebView
+                        />
+                    </TouchableOpacity>
+                </View>
             </Modal>
         </View>
     )
@@ -166,16 +185,9 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
     imageContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 15,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    image: {
-        width: "100%",
-        height: 500,
-        borderRadius: 8,
+        width: Dimensions.get('window').width, // Adjust width as needed
+        height: 580, // Fixed height or adjust as needed
+        paddingHorizontal: 10,
     },
     imageContainerText: {
         ...typography.h6(colors),

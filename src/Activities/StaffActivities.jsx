@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, ScrollView } from 'react-native';
-import { api } from '../Constants/api';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Dimensions, FlatList, Image } from 'react-native';
+
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { Dropdown } from 'react-native-element-dropdown';
+
+import { typography } from '../Constants/helper';
+import { useThemeContext } from '../Context/ThemeContext';
+import { api } from '../Constants/api';
+import { formatTime } from '../Constants/utils';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import { Dropdown } from 'react-native-element-dropdown';
-import { customColors, typography } from '../Constants/helper';
 
 const StaffActivities = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
+    const { colors, customStyles } = useThemeContext();
 
-    const [organizedData, setOrganizedData] = useState([]);
-    const [activeCategory, setActiveCategory] = useState(null);
+    const [overAllData, setOverAllData] = useState([]);
+    const [staffData, setStaffData] = useState([]);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -23,36 +26,34 @@ const StaffActivities = () => {
         { label: "GODOWN", value: 2 }
     ];
     const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
+    const [expandedCategoryIndex, setExpandedCategoryIndex] = useState(-1);
 
-    const reportDropDown = [
-        { label: "Individual Activities", value: 1 },
-        { label: "Overall Activities", value: 2 }
-    ];
-    const [reportDropDownValue, setReportDropDownValue] = useState(reportDropDown[0].label);
-    const [staffCategoryMap, setStaffCategoryMap] = useState({});
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: "overall", title: "Godown Based" },
+        { key: "staff", title: "Staff Based" },
+    ]);
 
     useEffect(() => {
-        getStaffActivities(selectedDate.toISOString(), dropDownValue);
+        fetchData()
     }, [selectedDate, dropDownValue]);
 
-    const getStaffActivities = async (date, dropValue) => {
+
+    const fetchData = async () => {
         try {
-            const response = await fetch(api.getStaffActivities(date, dropValue));
-            const jsonData = await response.json();
+            const overAllResponse = await fetch(api.getStaffActivities(selectedDate.toISOString(), dropDownValue))
+            const staffWiseResponse = await fetch(api.getStaffActivitiesAbstract(selectedDate.toISOString(), dropDownValue))
 
-            if (jsonData.success) {
-                setOrganizedData(jsonData.data);
+            const overAllData = await overAllResponse.json()
+            const staffData = await staffWiseResponse.json()
 
-                // const categories = jsonData.data[0]?.Categories || [];
-                // setOrganizedData(categories);
+            setOverAllData(overAllData.data || [])
+            setStaffData(staffData.data || [])
 
-                const staffCategoryMap = getStaffCategoryReport(jsonData.data);
-                setStaffCategoryMap(staffCategoryMap);
-            }
         } catch (err) {
             console.log("Error fetching data:", err);
         }
-    };
+    }
 
     const showDatepicker = () => {
         setShowDatePicker(true);
@@ -65,154 +66,152 @@ const StaffActivities = () => {
         }
     };
 
-    const handleTabClick = (categoryIndex, category) => {
-        // Update the active category for the specific card
-        setOrganizedData(prevData => {
-            const newData = [...prevData];
-            newData[categoryIndex].activeCategory = category;
-            return newData;
-        });
-    };
-
-    const renderCategory = ({ item }) => {
-        return (
-            <View style={styles(colors).categoryContainer}>
-                <Text style={styles(colors).categoryTitle}>{item.Category}</Text>
-                {renderStaffDetails(item.StaffDetails)}
-            </View>
-        );
-    };
-
-    const renderStaffDetails = (staffDetails) => {
-        if (!staffDetails || !Array.isArray(staffDetails) || staffDetails.length === 0) {
-            return <Text>No staff details available.</Text>;
-        }
-
-        return staffDetails.map(staff => (
-            <View key={staff.Id} style={styles(colors).staffDetails}>
-                <Text style={styles(colors).staffName}>{staff.StaffName}</Text>
-                <Text style={styles(colors).staffInfo}>Category: {staff.Category}</Text>
-                <Text style={styles(colors).staffInfo}>Tonnage: {staff.Tonnage}</Text>
-            </View>
-        ));
-    };
-
-    const getStaffCategoryReport = (data) => {
-        const staffCategoryMap = {};
-
-        data.forEach(entry => {
-            entry.Categories.forEach(category => {
-                category.StaffDetails.forEach(staff => {
-                    if (!staffCategoryMap[staff.StaffName]) {
-                        staffCategoryMap[staff.StaffName] = { categories: {}, totalTonnage: 0 };
-                    }
-                    if (!staffCategoryMap[staff.StaffName].categories[category.Category]) {
-                        staffCategoryMap[staff.StaffName].categories[category.Category] = 0;
-                    }
-                    staffCategoryMap[staff.StaffName].categories[category.Category] += parseFloat(staff.Tonnage);
-                    staffCategoryMap[staff.StaffName].totalTonnage += parseFloat(staff.Tonnage);
-                });
-            });
-        });
-
-        return staffCategoryMap;
-    };
-
-    const renderStaffCategoryReport = (staffCategoryMap) => {
-        return Object.keys(staffCategoryMap).map(staffName => (
-            <View key={staffName} style={styles(colors).staffReportContainer}>
-                <View style={{ flexDirection: "row" }}>
-                    <Icon name='user-o' size={20} color={colors.accent} style={{ marginRight: 5 }} />
-                    <Text style={styles(colors).staffReportName}>
-                        {staffName}
-                        <Text style={{ color: colors.accent }}>
-                            &nbsp;({staffCategoryMap[staffName].totalTonnage.toFixed(2)})
-                        </Text>
-                    </Text>
-                </View>
-                {Object.keys(staffCategoryMap[staffName].categories).map(category => (
-                    <View key={category} style={{ flexDirection: "row", marginTop: 5 }}>
-                        <Icon name='user-o' size={20} color="transparent" style={{ marginRight: 5 }} />
-                        <Text style={styles(colors).staffReportCategory}>
-                            {category}:
-                            <Text style={{ color: colors.primary }}>
-                                &nbsp;({staffCategoryMap[staffName].categories[category].toFixed(2)})
-                            </Text>
-                        </Text>
-                    </View>
-                ))}
-            </View>
-        ));
-    };
-
-    // OverAll
-
     const renderOverAllStaffDetails = () => {
-        return organizedData.map((category, index) => (
-            <View key={category.EntryTime} style={styles(colors).cardContainer}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15, }}>
-                    <View style={{ flexDirection: "row", }}>
-                        <Icon name='clock-o' size={20} color={colors.accent} style={{ marginTop: 2.5 }} />
-                        <Text style={styles(colors).heading}>
-                            {new Date(category.EntryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
+        return (
+            <FlatList
+                data={overAllData}
+                keyExtractor={(item) => item.EntryTime}
+                renderItem={({ item }) => {
+                    const categories = item.Categories.filter(category => category.StaffDetails.length > 0); // Filter out empty categories
+
+                    return (
+                        <View style={styles(colors).card}>
+                            <View style={{ flexDirection: "row" }}>
+                                <Image source={require('../../assets/images/clock.png')}
+                                    style={[styles(colors).icon, { marginRight: 5, }]}
+                                />
+                                <Text style={[styles(colors).overAllHeader, { color: colors.primary }]}>{formatTime(item.EntryTime)}</Text>
+                            </View>
+                            <FlatList
+                                data={categories}
+                                renderItem={({ item: category, index }) => (
+                                    <TouchableOpacity onPress={() => setExpandedCategoryIndex(index === expandedCategoryIndex ? -1 : index)}>
+                                        <View style={styles(colors).overAllContainer}>
+                                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                                <Text style={styles(colors).overAllHeader}>
+                                                    <Icon name='building-o' size={20} color={colors.accent} />
+                                                    &nbsp;&nbsp;{category.Category}
+                                                </Text>
+                                                <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>{category.StaffDetails.reduce((sum, staff) => sum + (staff.Tonnage || 0), 0).toFixed(2)}</Text>
+                                            </View>
+                                            {expandedCategoryIndex === index && (
+                                                <View style={styles(colors).overAllDetails}>
+                                                    {category.StaffDetails.map((staff, idx) => (
+                                                        <View key={idx} style={styles(colors).staffDetails}>
+                                                            <Text style={styles(colors).overAllHeader}>
+                                                                <Icon name='user-o' size={20} color={colors.accent} />
+                                                                &nbsp;&nbsp;{staff.StaffName}
+                                                            </Text>
+                                                            <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>{staff.Tonnage}</Text>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </View>
+                                    </TouchableOpacity>
+                                )}
+                                keyExtractor={(category) => category.Category}
+                            />
+                        </View>
+                    );
+                }}
+                ListEmptyComponent={() => (
+                    <View style={customStyles.noDataContainer}>
+                        <Text style={customStyles.noDataText}>No display to show!</Text>
                     </View>
-                </View>
-                <View style={styles(colors).tabContainer}>
-                    <ScrollView horizontal>
-                        {category.Categories.map(cat => (
-                            <TouchableOpacity
-                                key={cat.Category}
-                                style={[
-                                    styles(colors).tabItem,
-                                    cat.Category === category.activeCategory ? styles(colors).activeTab : null
-                                ]}
-                                onPress={() => handleTabClick(index, cat.Category)}
-                            >
-                                <Text style={styles(colors).tabText}>
-                                    {cat.Category}
-                                    <Text style={{ color: colors.accent }}>
-                                        {"\n"}({getCategoryTotal(category, cat.Category)})
-                                    </Text>
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-                {renderCategoryDetails(category)}
-            </View>
-        ));
-    };
+                )}
+            />
+        )
+    }
 
-    const renderCategoryDetails = (category) => {
-        const activeCategory = category.activeCategory || category.Categories[0].Category; // Default to the first category if no activeCategory set
-        const cat = category.Categories.find(cat => cat.Category === activeCategory);
-        if (cat) {
-            return cat.StaffDetails.map(detail => (
-                <View key={detail.Id} style={styles(colors).detailContainer}>
-                    <Text style={styles(colors).staffName}>{detail.StaffName}</Text>
-                    <Text style={styles(colors).tonnage}>{detail.Tonnage}</Text>
-                </View>
-            ));
-        }
-        return <Text>No staff details available.</Text>;
-    };
+    const renderOverAllStaffWise = () => {
+        return (
+            <FlatList
+                data={staffData}
+                keyExtractor={(item) => item.StaffName}
+                renderItem={({ item }) => {
 
-    const getCategoryTotal = (category, categoryName) => {
-        let total = 0;
+                    const totalTonnage = item.Categories.reduce((sum, category) => {
+                        const staffDetails = category.StaffDetails || {};
+                        const tonnage = staffDetails.Tonnage || 0;
 
-        category.Categories.forEach(cat => {
-            if (cat.Category === categoryName) {
-                cat.StaffDetails.forEach(detail => {
-                    total += detail.Tonnage;
-                });
-            }
-        });
-        return total.toFixed(2); // Adjust as per your formatting needs
-    };
+                        if (Object.keys(staffDetails).length === 0) {
+                            return sum;
+                        }
+
+                        // console.log(`Category: ${category.Category}, Tonnage: ${tonnage}`); // Log each tonnage value for debugging
+                        return sum + tonnage;
+                    }, 0);
+
+                    return (
+                        <View style={styles(colors).card}>
+                            <View style={styles(colors).cardHeader}>
+                                <View style={{ flexDirection: "row" }}>
+                                    <Image source={require('../../assets/images/driver.png')}
+                                        style={[styles(colors).icon, { marginRight: 5, }]}
+                                    />
+                                    <Text style={styles(colors).cardTitle}>{item.StaffName}</Text>
+                                </View>
+                                <View style={{ flexDirection: "row" }}>
+                                    <Image source={require('../../assets/images/import.png')}
+                                        style={[styles(colors).icon, { marginRight: 5, }]}
+                                    />
+                                    <Text style={styles(colors).cardTonnage}>{totalTonnage.toFixed(2)}</Text>
+                                </View>
+                            </View>
+                            {item.Categories.map((category, index) => {
+                                const staffDetails = category.StaffDetails || {};
+                                if (Object.keys(staffDetails).length === 0) {
+                                    return null; // Skip empty StaffDetails
+                                }
+
+                                return (
+                                    <View key={index} style={styles(colors).categoryContainer}>
+                                        <Text style={styles(colors).categoryTitle}>
+                                            <Icon name='building-o' size={20} color={colors.accent} />
+                                            &nbsp;&nbsp;{category.Category}
+                                        </Text>
+                                        <Text style={styles(colors).categoryTitle}>
+                                            <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                            &nbsp;{staffDetails.Tonnage}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    );
+                }}
+                ListEmptyComponent={() => (
+                    <View style={customStyles.noDataContainer}>
+                        <Text style={customStyles.noDataText}>No display to show!</Text>
+                    </View>
+                )}
+            />
+        )
+    }
+
+    const renderScene = SceneMap({
+        overall: renderOverAllStaffDetails,
+        staff: renderOverAllStaffWise,
+    });
+
+    const renderTabBar = props => (
+        <TabBar
+            {...props}
+            indicatorStyle={{ backgroundColor: colors.accent }}
+            style={{ backgroundColor: colors.primary }}
+            scrollEnabled={true}
+            tabStyle={{ width: 'auto' }}
+            renderLabel={({ route, focused, color }) => (
+                <Text style={[customStyles.tabLabel, { color: focused ? colors.white : colors.inactive }]}>
+                    {route.title}
+                </Text>
+            )}
+        />
+    );
 
     return (
-        <View style={styles(colors).container}>
+        <View style={customStyles.container}>
             <View style={styles(colors).userPickContainer}>
                 <View style={styles(colors).datePickerWrapper}>
                     <TouchableOpacity style={styles(colors).datePicker} onPress={showDatepicker}>
@@ -260,40 +259,13 @@ const StaffActivities = () => {
                 />
             </View>
 
-            <Dropdown
-                data={reportDropDown}
-                value={reportDropDownValue}
-                labelField="label"
-                valueField="label"
-                placeholder="Select the One"
-                renderLeftIcon={() => (
-                    <MaterialIcons name="apple-keyboard-option"
-                        color={colors.accent} size={20}
-                        style={{ marginRight: 10, }}
-                    />
-                )}
-                onChange={item => {
-                    setReportDropDownValue(item.label);
-                }}
-                maxHeight={300}
-                style={[styles(colors).dropdown, { width: "75%", marginHorizontal: "auto", marginVertical: 20 }]}
-                placeholderStyle={styles(colors).placeholderStyle}
-                containerStyle={styles(colors).dropdownContainer}
-                selectedTextStyle={styles(colors).selectedTextStyle}
-                iconStyle={styles(colors).iconStyle}
+            <TabView
+                navigationState={{ index, routes }}
+                renderScene={renderScene}
+                onIndexChange={setIndex}
+                initialLayout={{ width: Dimensions.get('window').width }}
+                renderTabBar={renderTabBar}
             />
-
-
-            {reportDropDownValue === "Individual Activities" ? (
-                <ScrollView>
-                    {renderStaffCategoryReport(staffCategoryMap)}
-                </ScrollView>
-            ) : (
-                <ScrollView>
-                    {renderOverAllStaffDetails()}
-                </ScrollView>
-            )}
-
         </View>
     )
 }
@@ -301,16 +273,12 @@ const StaffActivities = () => {
 export default StaffActivities
 
 const styles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: 10,
-    },
     userPickContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 10,
+        padding: 10,
     },
     datePickerWrapper: {
         width: "45%",
@@ -355,125 +323,85 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
 
-
-    staffReportContainer: {
+    card: {
         backgroundColor: colors.background,
         borderRadius: 10,
+
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 3,
+
+        margin: 15,
         padding: 15,
-        marginVertical: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1
-        },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
-        elevation: 2,
-        marginHorizontal: 10
     },
-    staffReportName: {
-        ...typography.h6(colors),
-        fontWeight: 'bold',
-    },
-    staffReportCategory: {
-        ...typography.body1(colors),
-        fontWeight: 'bold',
-    },
-    individualReportContainer: {
-        padding: 10,
-    },
-
-
-    listContent: {
-        paddingBottom: 16,
-    },
-    categoryContainer: {
-        marginBottom: 16,
-    },
-    categoryTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 8,
-    },
-    staffDetails: {
-        marginBottom: 8,
-        paddingLeft: 16,
-    },
-    staffName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.text,
-    },
-    staffInfo: {
-        fontSize: 14,
-        color: colors.text,
-    },
-
-
-
-
-    cardContainer: {
-        backgroundColor: colors.background,
-        borderRadius: 8,
-        shadowColor: colors.black, // iOS shadow
-        shadowOffset: {
-            width: 0,
-            height: 1
-        },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
-        elevation: 3, // Android shadow
-        padding: 10,
-        marginHorizontal: 15,
-        marginVertical: 10,
-    },
-    heading: {
-        textAlign: "center",
-        ...typography.h6(colors),
-        fontWeight: 'bold',
-        marginLeft: 5,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        marginBottom: 10,
-    },
-    tabItem: {
-        minWidth: 100,
-        maxWidth: 150,
-        padding: 8,
-        marginRight: 10,
-        borderRadius: 5,
-        backgroundColor: colors.secondary,
-    },
-    activeTab: {
-        borderWidth: 1.5,
-        borderColor: colors.primary,
-    },
-    tabText: {
-        textAlign: "center",
-        ...typography.body1(colors),
-        fontWeight: 'bold',
-    },
-
-    detailContainer: {
+    cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        marginBottom: 10,
     },
-    staffName: {
-        fontSize: 14,
+    cardTitle: {
+        ...typography.h5(colors),
         fontWeight: 'bold',
     },
-    tonnage: {
-        fontSize: 14,
-        color: '#666',
+    cardTonnage: {
+        ...typography.h5(colors),
+        fontWeight: 'bold',
+        color: colors.accent,
     },
-
-
-
+    icon: {
+        width: 25,
+        height: 25,
+    },
+    categoryContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.primary,
+    },
+    categoryTitle: {
+        ...typography.body1(colors),
+        fontWeight: 'bold',
+    },
+    categoryDetails: {
+        paddingLeft: 10,
+        marginTop: 5,
+    },
+    overAllContainer: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        paddingVertical: 10,
+    },
+    overAllHeader: {
+        ...typography.h6(colors),
+        flexWrap: "wrap",
+        fontWeight: "bold"
+    },
+    overAllDetails: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+    overAllTitle: {
+        fontWeight: 'bold',
+        fontSize: 14,
+        color: colors.primary,
+    },
+    overAllTonnage: {
+        fontWeight: 'bold',
+        fontSize: 14,
+        color: colors.secondary,
+    },
+    staffDetails: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingLeft: 10,
+        marginTop: 5,
+        marginBottom: 5,
+    },
 })

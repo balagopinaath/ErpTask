@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ScrollView, Dimensions } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
-import PagerView from 'react-native-pager-view';
 
 import { api } from '../Constants/api';
 import { typography } from '../Constants/helper';
@@ -403,11 +402,13 @@ const DriverActivities = () => {
             {...props}
             indicatorStyle={{ backgroundColor: colors.accent }}
             style={{ backgroundColor: colors.primary }}
+            scrollEnabled={true}
+            tabStyle={{ width: 'auto' }}
             // labelStyle={{ color: colors.text }}
             // activeColor={colors.white}
             // inactiveColor={colors.inactive}
             renderLabel={({ route, focused, color }) => (
-                <Text style={[styles(colors).tabLabel, { color: focused ? colors.white : colors.inactive }]}>
+                <Text style={[customStyles.tabLabel, { color: focused ? colors.white : colors.inactive }]}>
                     {route.title}
                 </Text>
             )}
@@ -530,11 +531,6 @@ const styles = (colors) => StyleSheet.create({
     iconStyle: {
         width: 20,
         height: 20,
-    },
-    tabLabel: {
-        textAlign: "center",
-        ...typography.body1(colors),
-        fontWeight: "bold",
     },
 
 
@@ -703,6 +699,7 @@ const styles = (colors) => StyleSheet.create({
         ...typography.h6(colors),
         marginLeft: 10,
     },
+
 
     timeContainer: {
         borderWidth: 1,

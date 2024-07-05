@@ -4533,10 +4533,10 @@ react-native-image-zoom-viewer@^3.0.1:
   dependencies:
     react-native-image-pan-zoom "^2.1.12"
 
-react-native-pager-view@*, react-native-pager-view@^5.1.5:
-  version "5.1.5"
-  resolved "https://registry.npmjs.org/react-native-pager-view/-/react-native-pager-view-5.1.5.tgz"
-  integrity sha512-Z2mW1Rz6Mzh2IDKL7KFi/s1BkZxpuGzRhmvYXWVN/TXDcEC8m3wIdCJOccDawbaQ1NXg2pIdACzmfHpO/tbo+w==
+react-native-pager-view@*, react-native-pager-view@^6.3.3:
+  version "6.3.3"
+  resolved "https://registry.npmjs.org/react-native-pager-view/-/react-native-pager-view-6.3.3.tgz"
+  integrity sha512-HViKBlfN/kBJUSu5mRL/V9Bkf1j7uDZozGAjbzh4o9XYo11qVcIK7IwvfzqrkNerVSDy/cAmZcXbcyWnII8xMA==
 
 react-native-paper@^5.12.3:
   version "5.12.3"
