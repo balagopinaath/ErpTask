@@ -1,16 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, ScrollView, } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import { customColors, typography } from '../Constants/helper';
-import { api } from '../Constants/api';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
-import { DataTable, Card, Title, Paragraph } from 'react-native-paper';
+
+import { typography } from '../Constants/helper';
+import { api } from '../Constants/api';
+import { useThemeContext } from '../Context/ThemeContext';
 
 const DeliveryActivities = () => {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
-    const colors = customColors[isDarkMode ? 'dark' : 'light'];
+    const { colors, customStyles } = useThemeContext();
 
     const [deliveryData, setDeliveryData] = useState([])
 
@@ -50,7 +50,7 @@ const DeliveryActivities = () => {
     };
 
     return (
-        <View style={styles(colors).container}>
+        <View style={customStyles.container}>
             <View style={styles(colors).userPickContainer}>
                 <TouchableOpacity
                     style={styles(colors).datePicker}
@@ -145,14 +145,10 @@ const DeliveryActivities = () => {
 export default DeliveryActivities
 
 const styles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: 10,
-    },
     userPickContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
+        padding: 10,
     },
     datePicker: {
         width: "45%",

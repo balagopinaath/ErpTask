@@ -26,7 +26,7 @@ const StaffActivities = () => {
         { label: "GODOWN", value: 2 }
     ];
     const [dropDownValue, setDropDownValue] = useState(dropDownData[0].label);
-    const [expandedCategoryIndex, setExpandedCategoryIndex] = useState(-1);
+    const [expandedCategories, setExpandedCategories] = useState({});
 
     const [index, setIndex] = useState(0);
     const [routes] = useState([
@@ -66,35 +66,50 @@ const StaffActivities = () => {
         }
     };
 
+    const toggleCategoryExpansion = (entryIndex, categoryIndex) => {
+        setExpandedCategories((prevState) => {
+            const newExpandedCategories = { ...prevState };
+            if (!newExpandedCategories[entryIndex]) {
+                newExpandedCategories[entryIndex] = [];
+            }
+            newExpandedCategories[entryIndex][categoryIndex] = !newExpandedCategories[entryIndex][categoryIndex];
+            return newExpandedCategories;
+        });
+    };
+
     const renderOverAllStaffDetails = () => {
         return (
             <FlatList
                 data={overAllData}
                 keyExtractor={(item) => item.EntryTime}
-                renderItem={({ item }) => {
-                    const categories = item.Categories.filter(category => category.StaffDetails.length > 0); // Filter out empty categories
+                renderItem={({ item, index: entryIndex }) => {
+                    const categories = item.Categories.filter(category => category.StaffDetails.length > 0);
 
                     return (
                         <View style={styles(colors).card}>
                             <View style={{ flexDirection: "row" }}>
                                 <Image source={require('../../assets/images/clock.png')}
-                                    style={[styles(colors).icon, { marginRight: 5, }]}
+                                    style={[styles(colors).icon, { marginRight: 5 }]}
                                 />
-                                <Text style={[styles(colors).overAllHeader, { color: colors.primary }]}>{formatTime(item.EntryTime)}</Text>
+                                <Text style={[styles(colors).overAllHeader, { color: colors.primary }]}>
+                                    {formatTime(item.EntryTime)}
+                                </Text>
                             </View>
                             <FlatList
                                 data={categories}
-                                renderItem={({ item: category, index }) => (
-                                    <TouchableOpacity onPress={() => setExpandedCategoryIndex(index === expandedCategoryIndex ? -1 : index)}>
+                                renderItem={({ item: category, index: categoryIndex }) => (
+                                    <TouchableOpacity onPress={() => toggleCategoryExpansion(entryIndex, categoryIndex)}>
                                         <View style={styles(colors).overAllContainer}>
                                             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                                                <Text style={styles(colors).overAllHeader}>
+                                                <Text style={[styles(colors).overAllHeader, { flex: 1, }]} numberOfLines={2}>
                                                     <Icon name='building-o' size={20} color={colors.accent} />
                                                     &nbsp;&nbsp;{category.Category}
                                                 </Text>
-                                                <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>{category.StaffDetails.reduce((sum, staff) => sum + (staff.Tonnage || 0), 0).toFixed(2)}</Text>
+                                                <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>
+                                                    {category.StaffDetails.reduce((sum, staff) => sum + (staff.Tonnage || 0), 0).toFixed(2)}
+                                                </Text>
                                             </View>
-                                            {expandedCategoryIndex === index && (
+                                            {expandedCategories[entryIndex]?.[categoryIndex] && (
                                                 <View style={styles(colors).overAllDetails}>
                                                     {category.StaffDetails.map((staff, idx) => (
                                                         <View key={idx} style={styles(colors).staffDetails}>
@@ -102,7 +117,9 @@ const StaffActivities = () => {
                                                                 <Icon name='user-o' size={20} color={colors.accent} />
                                                                 &nbsp;&nbsp;{staff.StaffName}
                                                             </Text>
-                                                            <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>{staff.Tonnage}</Text>
+                                                            <Text style={[styles(colors).overAllHeader, { color: colors.accent }]}>
+                                                                {staff.Tonnage}
+                                                            </Text>
                                                         </View>
                                                     ))}
                                                 </View>
@@ -121,8 +138,8 @@ const StaffActivities = () => {
                     </View>
                 )}
             />
-        )
-    }
+        );
+    };
 
     const renderOverAllStaffWise = () => {
         return (

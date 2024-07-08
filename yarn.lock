@@ -1189,6 +1189,11 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@likashefqet/react-native-image-zoom@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/@likashefqet/react-native-image-zoom/-/react-native-image-zoom-3.0.0.tgz"
+  integrity sha512-vDg7j9wIYiMsYM8qymdPIC9+ZHJGZ3FvcN8Ob1zTlNSaEFybH9+7Qw7AbO4MaNEAFqhF7C8j09jw7BPGpXI29w==
+
 "@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1":
   version "5.1.1-v1"
   dependencies:
@@ -4505,7 +4510,7 @@ react-native-element-dropdown@^2.12.0:
   dependencies:
     lodash "^4.17.21"
 
-react-native-gesture-handler@^2.16.2, "react-native-gesture-handler@>= 1.0.0":
+react-native-gesture-handler@^2.16.2, "react-native-gesture-handler@>= 1.0.0", react-native-gesture-handler@>=2.x.x:
   version "2.16.2"
   resolved "https://registry.npmjs.org/react-native-gesture-handler/-/react-native-gesture-handler-2.16.2.tgz"
   integrity sha512-vGFlrDKlmyI+BT+FemqVxmvO7nqxU33cgXVsn6IKAFishvlG3oV2Ds67D5nPkHMea8T+s1IcuMm0bF8ntZtAyg==
@@ -4515,23 +4520,6 @@ react-native-gesture-handler@^2.16.2, "react-native-gesture-handler@>= 1.0.0":
     invariant "^2.2.4"
     lodash "^4.17.21"
     prop-types "^15.7.2"
-
-react-native-image-pan-zoom@^2.1.12:
-  version "2.1.12"
-  resolved "https://registry.npmjs.org/react-native-image-pan-zoom/-/react-native-image-pan-zoom-2.1.12.tgz"
-  integrity sha512-BF66XeP6dzuANsPmmFsJshM2Jyh/Mo1t8FsGc1L9Q9/sVP8MJULDabB1hms+eAoqgtyhMr5BuXV3E1hJ5U5H6Q==
-
-react-native-image-preview-reanimated@^0.5.2:
-  version "0.5.2"
-  resolved "https://registry.npmjs.org/react-native-image-preview-reanimated/-/react-native-image-preview-reanimated-0.5.2.tgz"
-  integrity sha512-otiXvrrt721d/+ufjEdsfZGbvAsa7UDls7nNBV8jlx8+qIwXYAV+4j6MsJzbu1hEu20I++iHFak52peJ/rw+xg==
-
-react-native-image-zoom-viewer@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.npmjs.org/react-native-image-zoom-viewer/-/react-native-image-zoom-viewer-3.0.1.tgz"
-  integrity sha512-la6s5DNSuq4GCRLsi5CZ29FPjgTpdCuGIRdO5T9rUrAtxrlpBPhhSnHrbmPVxsdtOUvxHacTh2Gfa9+RraMZQA==
-  dependencies:
-    react-native-image-pan-zoom "^2.1.12"
 
 react-native-pager-view@*, react-native-pager-view@^6.3.3:
   version "6.3.3"
@@ -4547,7 +4535,7 @@ react-native-paper@^5.12.3:
     color "^3.1.2"
     use-latest-callback "^0.1.5"
 
-react-native-reanimated@^3.12.0:
+react-native-reanimated@^3.12.0, react-native-reanimated@>=2.x.x:
   version "3.12.0"
   resolved "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-3.12.0.tgz"
   integrity sha512-Bwa4jKL/QttnV8pQYiX+1N5a6XgL8yZtMyH+7UbEaW7ZeNCv1Pxp2PmYu/bP3LafCkmS9Yj/hY2adYNKe58g9A==
@@ -4597,7 +4585,7 @@ react-native-webview@^13.10.3:
     escape-string-regexp "2.0.0"
     invariant "2.2.4"
 
-react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", react-native@>=0.57, react-native@0.74.2:
+react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", react-native@>=0.57, react-native@>=0.62.x, react-native@0.74.2:
   version "0.74.2"
   dependencies:
     "@jest/create-cache-key-function" "^29.6.3"
@@ -4654,7 +4642,7 @@ react-test-renderer@18.2.0:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.23.0"
 
-react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@>=16, react@>=16.3.0, react@>=16.8, react@>=17.0.0, react@18.2.0:
+react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@>=16, react@>=16.3.0, react@>=16.8, react@>=16.x.x, react@>=17.0.0, react@18.2.0:
   version "18.2.0"
   dependencies:
     loose-envify "^1.1.0"

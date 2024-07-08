@@ -1,26 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Animated, Modal, Dimensions, Linking } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Linking } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import ImageViewer from 'react-native-image-zoom-viewer';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { PreviewModal } from 'react-native-image-preview-reanimated';
-import ImageZoom from 'react-native-image-pan-zoom';
 
-// import WebView from 'react-native-webview';
-import WebView from 'react-native-webview';
+import { ImageZoom } from '@likashefqet/react-native-image-zoom';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { api } from '../Constants/api';
 import { useThemeContext } from '../Context/ThemeContext';
 import { typography } from '../Constants/helper';
-import { TouchableWithoutFeedback } from 'react-native';
-import { Button } from 'react-native';
 
 const InwardsActivities = () => {
     const { colors, customStyles } = useThemeContext();
 
     const [organizedData, setOrganizedData] = useState([]);
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const dropDownData = [
         { label: "INWARD", value: 1 },
@@ -33,7 +26,6 @@ const InwardsActivities = () => {
     }, [dropDownValue]);
 
     const getActivities = async () => {
-        console.log(api.inwardActivity)
         try {
             let response
             if (dropDownValue === "INWARD") {
@@ -52,32 +44,9 @@ const InwardsActivities = () => {
         }
     };
 
-    const imageUrls = organizedData.map(item => ({
-        url: item.url,
-    }));
-
     const openInBrowser = (url) => {
         Linking.openURL(url).catch((err) => console.error('An error occurred', err));
     };
-
-    const renderImageItems = () => {
-        return organizedData.map((item, index) => (
-            <TouchableOpacity key={index} onPress={() => setIsModalOpen(true)}>
-                <View style={styles.imageContainer}>
-                    <WebView
-                        source={{ uri: item.url }}
-                        style={styles.webViewStyle}
-                        originWhitelist={['*']}
-                        allowsFullscreenVideo={true}
-                        javaScriptEnabled={true}
-                        domStorageEnabled={true}
-                        scalesPageToFit={true}
-                    />
-                </View>
-            </TouchableOpacity>
-        ));
-    };
-
 
     return (
         <View style={customStyles.container}>
@@ -106,7 +75,7 @@ const InwardsActivities = () => {
                 />
 
                 {organizedData.map((item, index) => (
-                    <View key={index} style={{ flexDirection: "row", marginTop: 15, }}>
+                    <View key={index} style={styles(colors).imageContainer}>
                         <Icon name='clock-o' size={20} color={colors.accent} style={{ marginTop: 2.5 }} />
                         <Text style={styles(colors).imageContainerText}>
                             Updated at: {new Date(item.modifiedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -115,38 +84,23 @@ const InwardsActivities = () => {
                 ))}
             </View>
 
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <GestureHandlerRootView>
                 {organizedData.map((item, index) => (
-                    <View key={index} style={styles(colors).imageContainer}>
-                        <WebView
-                            source={{ uri: item.url }}
-                            style={{ width: Dimensions.get('window').width, height: 500 }}
-                            originWhitelist={['*']}
-                            allowsFullscreenVideo={true}
-                            javaScriptEnabled={true}
-                            // domStorageEnabled={true}
-                            // scalesPageToFit={true}
-                            scrollEnabled={true} // Enable WebView scrolling
-                        />
-                    </View>
+                    <ImageZoom
+                        key={index}
+                        uri={item.url}
+                        minScale={0.5}
+                        maxScale={5}
+                        doubleTapScale={3}
+                        minPanPointers={1}
+                        isSingleTapEnabled
+                        isDoubleTapEnabled
+                        style={styles(colors).image}
+                        onSingleTap={() => { openInBrowser(item.url) }}
+                    />
                 ))}
-            </ScrollView>
-
-            <Modal visible={isModalOpen} transparent={true} onRequestClose={() => setIsModalOpen(false)}>
-                <View style={{ flex: 1, backgroundColor: 'black' }}>
-                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsModalOpen(false)}>
-                        <WebView
-                            source={{ uri: organizedData[selectedImageIndex]?.url }}
-                            // style={{ flex: 1 }}
-                            useWebKit={true} // Enable WebKit for pinch zoom support
-                            allowsFullscreenVideo={true} // Allow fullscreen video
-                            javaScriptEnabled={true} // Enable JavaScript in WebView
-                        />
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-        </View>
+            </GestureHandlerRootView>
+        </View >
     )
 }
 
@@ -185,12 +139,20 @@ const styles = (colors) => StyleSheet.create({
         height: 20,
     },
     imageContainer: {
-        width: Dimensions.get('window').width, // Adjust width as needed
-        height: 580, // Fixed height or adjust as needed
+        flexDirection: "row",
+        marginTop: 15,
         paddingHorizontal: 10,
     },
     imageContainerText: {
         ...typography.h6(colors),
         marginLeft: 5,
-    }
+    },
+    image: {
+        width: "100%",
+        height: 400,
+    },
+    zoomImage: {
+        width: Dimensions.get('window').width,
+        height: Dimensions.get('window').height,
+    },
 })
