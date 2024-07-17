@@ -315,7 +315,8 @@ const DriverActivities = () => {
             });
         });
 
-        return tonnageByCategory;
+        const totalTonnage = Object.values(tonnageByCategory).reduce((sum, value) => sum + value, 0);
+        return { ...tonnageByCategory, totalTonnage };
     };
 
     const renderAbstract = () => {
@@ -338,15 +339,25 @@ const DriverActivities = () => {
                     </View>
                 </View>
                 <View style={styles(colors).abstractRow}>
-                    {Object.entries(totalTonnageByCategory).map(([category, tonnage], index) => (
-                        <View key={index} style={styles(colors).abstractBox}>
-                            <Icon name='balance-scale' size={20} color={colors.accent} />
-                            <Text style={styles(colors).tonnageText}>
-                                {category} {"\n"}
-                                <Text style={{ color: colors.accent, fontWeight: "bold" }}>{tonnage.toFixed(2)}</Text>
-                            </Text>
-                        </View>
-                    ))}
+                    {Object.entries(totalTonnageByCategory).map(([category, tonnage], index) => {
+                        if (category === 'totalTonnage') return null;
+                        return (
+                            <View key={index} style={styles(colors).abstractBox}>
+                                <Icon name='balance-scale' size={20} color={colors.accent} />
+                                <Text style={styles(colors).tonnageText}>
+                                    {category} {"\n"}
+                                    <Text style={{ color: colors.accent, fontWeight: "bold" }}>{tonnage.toFixed(2)}</Text>
+                                </Text>
+                            </View>
+                        );
+                    })}
+                    <View style={styles(colors).abstractBox}>
+                        <Icon name='balance-scale' size={20} color={colors.accent} />
+                        <Text style={styles(colors).tonnageText}>
+                            {"\t"}Total {"\n"}
+                            <Text style={{ color: colors.accent, fontWeight: "bold" }}>{totalTonnageByCategory.totalTonnage.toFixed(2)}</Text>
+                        </Text>
+                    </View>
                 </View>
             </View>
         );

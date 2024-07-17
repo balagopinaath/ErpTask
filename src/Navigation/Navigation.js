@@ -28,7 +28,7 @@ const Navigation = () => {
     return (
         <NavigationContainer>
             <StatusBar
-                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                barStyle={isDarkMode ? "dark-content" : "light-content"}
                 backgroundColor={colors.primary}
             />
             <SafeAreaView style={customStyles.container}>

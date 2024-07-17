@@ -87,25 +87,23 @@ const GodownActivities = () => {
             };
 
             day.DayEntries.forEach(entry => {
-                dailyTotal.inward = entry.PurchaseTotal;
-                dailyTotal.management = entry.Handle + entry.WGChecking;
-                dailyTotal.outward = entry.SalesTotal;
-                dailyTotal.otherGodown = entry.SalesOtherGodown;
-
-                dailyTotal.inward = dailyTotal.inward.toFixed(2);
-                dailyTotal.management = dailyTotal.management.toFixed(2);
-                dailyTotal.outward = dailyTotal.outward.toFixed(2);
-                dailyTotal.otherGodown = dailyTotal.otherGodown.toFixed(2);
-
-                totalsForDay[day.EntryDate] = dailyTotal;
-
-                totals.inward += entry.PurchaseTotal;
-                totals.management += entry.Handle + entry.WGChecking;
-                totals.outward += entry.SalesTotal;
-                totals.outward += entry.SalesTotal;
-                totals.otherGodown += entry.SalesOtherGodown;
+                dailyTotal.inward += entry.PurchaseTotal;
+                dailyTotal.management += entry.Handle + entry.WGChecking;
+                dailyTotal.outward += entry.SalesTotal;
+                dailyTotal.otherGodown += entry.SalesOtherGodown;
             });
 
+            dailyTotal.inward = dailyTotal.inward.toFixed(2);
+            dailyTotal.management = dailyTotal.management.toFixed(2);
+            dailyTotal.outward = dailyTotal.outward.toFixed(2);
+            dailyTotal.otherGodown = dailyTotal.otherGodown.toFixed(2);
+
+            totalsForDay[day.EntryDate] = dailyTotal;
+
+            totals.inward += parseFloat(dailyTotal.inward);
+            totals.management += parseFloat(dailyTotal.management);
+            totals.outward += parseFloat(dailyTotal.outward);
+            totals.otherGodown += parseFloat(dailyTotal.otherGodown);
         });
 
         totals.inward = totals.inward.toFixed(2);
@@ -129,21 +127,30 @@ const GodownActivities = () => {
             { label: "Outward", value: 3, total: dailyTotal.outward },
         ];
 
+        const grandTotal = parseFloat(dailyTotal.inward) + parseFloat(dailyTotal.management) + parseFloat(dailyTotal.outward);
+        // console.log(grandTotal.toFixed(2))
+
         return (
             <View style={styles(colors).accordionContainer}>
                 {/* Header */}
                 <View style={styles(colors).accordionHeader} >
                     <View style={styles(colors).accordionView}>
                         <View style={styles(colors).accordionIconView}>
-                            <Icon name="calendar-o" color={colors.accent}
-                                size={20}
-                            />
-                            <Text style={styles(colors).accordionIconText}>
-                                {new Date(item.EntryDate).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: '2-digit'
-                                }).slice(0, 5)}
-                            </Text>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                <Icon name="calendar-o" color={colors.accent}
+                                    size={20}
+                                />
+                                <Text style={styles(colors).accordionIconText}>
+                                    {new Date(item.EntryDate).toLocaleDateString('en-GB', {
+                                        day: "2-digit",
+                                        month: "2-digit"
+                                    }).slice(0, 5)}
+                                </Text>
+                            </View>
+                            <View>
+                                <Text style={[styles(colors).accordionIconText, { color: colors.accent }]}>{grandTotal.toFixed(2)}</Text>
+                            </View>
+
                         </View>
                         <View style={styles(colors).accordionHeaderInner}>
                             {updatedTabData.map(tab => (
@@ -413,6 +420,7 @@ const styles = (colors) => StyleSheet.create({
     },
     accordionIconView: {
         flexDirection: "row",
+        justifyContent: "space-between"
     },
     accordionIconText: {
         ...typography.h6(colors),
