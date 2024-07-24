@@ -288,6 +288,18 @@ const HomeScreen = () => {
                                 />
                                 <Text style={styles(colors).text}>Abstracts</Text>
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles(colors).iconView}
+                                onPress={() => {
+                                    navigation.navigate("StaffAttendance");
+                                }}>
+                                <Image source={require('../../../assets/images/teamwork.png')}
+                                    style={styles(colors).logo}
+                                />
+                                <Text style={styles(colors).text}>Staff Attendance</Text>
+                            </TouchableOpacity>
+
                         </React.Fragment>
                     )}
                 </View>

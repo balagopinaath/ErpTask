@@ -12,6 +12,7 @@ export const api = {
     getDriverActivities: (reqDate, reqLocation) => `${endPoint}api/driverActivities?reqDate=${reqDate}&reqLocation=${reqLocation}`,
     getDriverTripBasedActivities: (fromDate, reqLocation) => `${endPoint}api/driverActivities/tripBased?reqDate=${fromDate}&reqLocation=${reqLocation}`,
     getTimeBasedDriverActivities: (fromDate, reqLocation) => `${endPoint}api/driverActivities/timeBased?reqDate=${fromDate}&reqLocation=${reqLocation}`,
+    getListBasedDriverActivities: (fromDate, reqLocation) => `${endPoint}api/driverActivities/view2?reqDate=${fromDate}&reqLocation=${reqLocation}`,
 
     getGodownActivities: (fromDate, toDate, reqLocation) => `${endPoint}api/godownActivities?Fromdate=${fromDate}&Todate=${toDate}&LocationDetails=${reqLocation}`,
     getGodownActivitiesAbstract: (fromDate, reqLocation) => `${endPoint}api/godownActivities/abstract?reqDate=${fromDate}&reqLocation=${reqLocation}`,
@@ -23,6 +24,8 @@ export const api = {
     getStaffActivitiesAbstract: (fromDate, reqLocation) => `${endPoint}api/staffActivities/staffBased?reqDate=${fromDate}&reqLocation=${reqLocation}`,
 
     getweightCheckActivity: (reqDate, reqLocation) => `${endPoint}api/weightCheckActivity?reqDate=${reqDate}&reqLocation=${reqLocation}`,
+
+    getStaffAttendance: (fromDate, toDate, reqLocation) => `${endPoint}api/dataEntryAttendance?Fromdate=${fromDate}&Todate=${toDate}&reqLocation=${reqLocation}`,
 
     inwardActivity: endPoint + "api/inwardActivity",
     machineOutern: endPoint + "api/machineOutern",

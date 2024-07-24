@@ -12,6 +12,7 @@ import AntIcon from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { formatTime } from '../Constants/utils';
 
 
 const DriverActivities = () => {
@@ -20,6 +21,7 @@ const DriverActivities = () => {
     const [categoryData, setCategoryData] = useState([]);
     const [tripWiseData, setTripWiseData] = useState([]);
     const [timeWiseData, setTimeWiseData] = useState([]);
+    const [listData, setListData] = useState([]);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -29,18 +31,20 @@ const DriverActivities = () => {
     ];
     const [locationDropDownValue, setLocationDropDownValue] = useState(locationDropDown[0].label);
 
-    const [index, setIndex] = useState(0);
+    const [index, setIndex] = useState(2);
     const [routes] = useState([
-        { key: 'abstract', title: 'Abstract' },
-        { key: 'category', title: 'Godown Wise' },
-        { key: 'tripWise', title: 'Trip Wise' },
-        { key: 'timeWise', title: 'Time Wise' },
+        { key: 'listWise', title: "Trip Based" },
+        { key: 'category', title: "Godown Based" },
+        { key: 'abstract', title: "Abstract" },
+        { key: 'tripWise', title: "Driver Based" },
+        { key: 'timeWise', title: "Time Based" },
     ]);
 
     useEffect(() => {
         getTripWiseData(selectedDate.toISOString(), locationDropDownValue);
         getDriverData(selectedDate.toISOString(), locationDropDownValue);
         getTimeWiseData(selectedDate.toISOString(), locationDropDownValue);
+        getListData(selectedDate.toISOString(), locationDropDownValue)
     }, [selectedDate, locationDropDownValue]);
 
     const getTripWiseData = async (from, dropValue) => {
@@ -61,6 +65,18 @@ const DriverActivities = () => {
             const jsonData = await response.json();
             if (jsonData.success) {
                 setCategoryData(jsonData.data);
+            }
+        } catch (err) {
+            console.log("Error fetching data:", err);
+        }
+    }
+
+    const getListData = async (from, dropValue) => {
+        try {
+            const response = await fetch(api.getListBasedDriverActivities(from, dropValue));
+            const jsonData = await response.json();
+            if (jsonData.success) {
+                setListData(jsonData.data);
             }
         } catch (err) {
             console.log("Error fetching data:", err);
@@ -369,28 +385,32 @@ const DriverActivities = () => {
             <ScrollView>
                 {timeWiseData.map((item, index) => (
                     <View key={index} style={styles(colors).timeContainer}>
-                        <Text style={styles(colors).timeEventTime}>{new Date(item.EventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                         {item.Trips.map((trip, tripIndex) => (
-                            <View key={tripIndex} style={styles(colors).timeTripContainer}>
-                                <View style={{}}>
-                                    <Text style={styles(colors).timeText}>
-                                        <Icon name='user-o' size={20} color={colors.accent} />
-                                        &nbsp;{trip.DriverName}
-                                    </Text>
-                                    <Text style={styles(colors).timeText}>
-                                        <Icon name='building-o' size={20} color={colors.accent} />
-                                        &nbsp;{trip.TripCategory}
-                                    </Text>
-                                </View>
-                                <View style={{}}>
-                                    <Text style={styles(colors).timeText}>
-                                        <FeatherIcon name='truck' size={20} color={colors.accent} />
-                                        &nbsp;{trip.TripNumber}
-                                    </Text>
-                                    <Text style={styles(colors).timeText}>
-                                        <MaterialIcons name='weight' size={20} color={colors.accent} />
-                                        &nbsp;{trip.TonnageValue}
-                                    </Text>
+                            <View key={tripIndex}>
+                                <Text style={styles(colors).timeEventTime}>
+                                    {formatTime(trip.EventTime)}
+                                </Text>
+                                <View style={styles(colors).timeTripContainer}>
+                                    <View style={{}}>
+                                        <Text style={styles(colors).timeText}>
+                                            <Icon name='user-o' size={20} color={colors.accent} />
+                                            &nbsp;{trip.DriverName}
+                                        </Text>
+                                        <Text style={styles(colors).timeText}>
+                                            <Icon name='building-o' size={20} color={colors.accent} />
+                                            &nbsp;{trip.TripCategory}
+                                        </Text>
+                                    </View>
+                                    <View style={{}}>
+                                        <Text style={styles(colors).timeText}>
+                                            <FeatherIcon name='truck' size={20} color={colors.accent} />
+                                            &nbsp;{trip.TripNumber}
+                                        </Text>
+                                        <Text style={styles(colors).timeText}>
+                                            <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                            &nbsp;{trip.TonnageValue}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         ))}
@@ -400,10 +420,151 @@ const DriverActivities = () => {
         )
     }
 
+    const calculateDriverWiseTotals = (listData) => {
+        return listData.map(driver => {
+            const totalTonnage = driver.DriverTrips.reduce((total, tripGroup) => {
+                return total + tripGroup.Trips.reduce((groupTotal, trip) => {
+                    return groupTotal + trip.TonnageValue;
+                }, 0);
+            }, 0);
+
+            return {
+                DriverName: driver.DriverName,
+                TotalTonnage: totalTonnage
+            };
+        });
+    };
+
+    const calculateOverallTotal = (listData) => {
+        return listData.reduce((total, driver) => {
+            return total + driver.DriverTrips.reduce((groupTotal, tripGroup) => {
+                return groupTotal + tripGroup.Trips.reduce((tripTotal, trip) => {
+                    return tripTotal + trip.TonnageValue;
+                }, 0);
+            }, 0);
+        }, 0);
+    };
+
+    const calculateCategoryWiseTotals = (listData) => {
+        const categoryTotals = {};
+
+        listData.forEach(driver => {
+            driver.DriverTrips.forEach(tripGroup => {
+                tripGroup.Trips.forEach(trip => {
+                    if (categoryTotals[trip.TripCategory]) {
+                        categoryTotals[trip.TripCategory] += trip.TonnageValue;
+                    } else {
+                        categoryTotals[trip.TripCategory] = trip.TonnageValue;
+                    }
+                });
+            });
+        });
+
+        return categoryTotals;
+    };
+
+    const groupTripsByVehicleNumber = (driverTrips) => {
+        const groupedTrips = {};
+
+        driverTrips.forEach(tripGroup => {
+            tripGroup.Trips.forEach(trip => {
+                if (!groupedTrips[trip.VehicleNumber]) {
+                    groupedTrips[trip.VehicleNumber] = [];
+                }
+                groupedTrips[trip.VehicleNumber].push(trip);
+            });
+        });
+
+        return groupedTrips;
+    };
+
+    const renderList = () => {
+        const driverWiseTotals = calculateDriverWiseTotals(listData);
+        const overallTotal = calculateOverallTotal(listData);
+        const categoryWiseTotals = calculateCategoryWiseTotals(listData);
+
+        return (
+            <ScrollView>
+                <View style={{ margin: "auto", paddingTop: 25 }}>
+                    {Object.entries(categoryWiseTotals).map(([category, total], index) => (
+                        <Text key={index} style={styles(colors).timeText}>{category}:
+                            <Text style={{ color: colors.primary }}> {total.toFixed(2)}</Text>
+                        </Text>
+                    ))}
+                    <Text style={styles(colors).timeEventTime}>
+                        Total Tonnage:
+                        <Text style={{ color: colors.primary }}> {overallTotal.toFixed(2)}</Text>
+                    </Text>
+                </View>
+
+                {listData.map((item, index) => {
+                    const groupedTrips = groupTripsByVehicleNumber(item.DriverTrips);
+
+                    return (
+                        <View key={index} style={styles(colors).timeContainer}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                <Text style={styles(colors).timeEventTime}>
+                                    <AntIcon name='user' size={20} color={colors.accent} />
+                                    &nbsp;{item.DriverName}
+                                </Text>
+                                <Text style={[styles(colors).timeEventTime, { color: colors.accent }]}>
+                                    <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                    &nbsp;
+                                    {driverWiseTotals.find(total => total.DriverName === item.DriverName)?.TotalTonnage || 0}
+                                </Text>
+                            </View>
+
+                            {Object.entries(groupedTrips).map(([vehicleNumber, trips], vehicleIndex) => (
+                                <View key={vehicleIndex} style={styles.tripGroupContainer}>
+                                    <Text style={styles(colors).timeEventTime}>
+                                        <FeatherIcon name='truck' size={20} color={colors.accent} />
+                                        &nbsp;{vehicleNumber}
+                                    </Text>
+                                    {trips.map((trip, tripItemIndex) => (
+                                        <View key={tripItemIndex} style={styles.tripContainer}>
+                                            <View style={{ marginTop: 15 }}>
+                                                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
+                                                    <Text style={styles(colors).timeText}>
+                                                        <FeatherIcon name='clock' size={20} color={colors.accent} />
+                                                        &nbsp;{formatTime(trip.EventTime)}
+                                                    </Text>
+                                                    <Text style={styles(colors).timeText}>
+                                                        <FeatherIcon name='clock' size={20} color={colors.accent} />
+                                                        &nbsp;{formatTime(trip.EndTime)}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15, borderBottomWidth: 1, borderBottomColor: colors.grey }}>
+                                                    <Text style={styles(colors).timeText}>
+                                                        <MaterialIcons name='account-arrow-right-outline' size={20} color={colors.accent} />
+                                                        &nbsp;{trip.TripNumber}
+                                                    </Text>
+                                                    <Text style={styles(colors).timeText}>
+                                                        <Icon name='building-o' size={20} color={colors.accent} />
+                                                        &nbsp;{trip.TripCategory}
+                                                    </Text>
+                                                    <Text style={styles(colors).timeText}>
+                                                        <MaterialIcons name='weight' size={20} color={colors.accent} />
+                                                        &nbsp;{trip.TonnageValue}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            ))}
+                        </View>
+                    );
+                })}
+            </ScrollView>
+        );
+    };
+
 
     const renderScene = SceneMap({
-        abstract: renderAbstract,
+        listWise: renderList,
         category: renderCategoryData,
+        abstract: renderAbstract,
         tripWise: renderTripWiseData,
         timeWise: renderTimeBased,
     });

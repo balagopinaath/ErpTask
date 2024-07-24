@@ -1,16 +1,19 @@
-export const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
+export const LocalTime = (dateObj) => {
+    const receivedDate = dateObj ? new Date(dateObj) : new Date();
+    return receivedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+}
+// Function to parse time string and format it
+export const formatTime = (timeString) => {
+    const [hours, minutes, seconds] = timeString ? timeString.split(':').map(Number) : '00:00:00';
 
-    let formattedHours = hours % 12;
-    formattedHours = formattedHours === 0 ? 12 : formattedHours; // Handle midnight (0 hours)
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+    date.setSeconds(seconds);
+    date.setMilliseconds(0);
 
-    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    const time = `${formattedHours}:${minutesStr} ${ampm}`;
-    return time;
-};
+    return LocalTime(date);
+}
 
 export const calculateDuration = (start, end) => {
     const startTime = new Date(start);
