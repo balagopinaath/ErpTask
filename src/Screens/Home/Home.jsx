@@ -50,7 +50,7 @@ const HomeScreen = () => {
     }, [isActive]);
 
     const fetchLastAttendance = async (id) => {
-        // console.log(`${api.getLastAttendance}${id}`)
+        console.log(`${api.getLastAttendance}${id}`)
         try {
             const response = await fetch(`${api.getLastAttendance}${id}`);
             const data = await response.json();

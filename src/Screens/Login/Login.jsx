@@ -1,10 +1,11 @@
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { typography } from '../../Constants/helper';
-import { api } from '../../Constants/api';
-import { useNavigation } from '@react-navigation/native';
-import { useThemeContext } from '../../Context/ThemeContext';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, ToastAndroid, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import CryptoJS from "react-native-crypto-js";
+import { typography } from "../../Constants/helper";
+import { api } from "../../Constants/api";
+import { useNavigation } from "@react-navigation/native";
+import { useThemeContext } from "../../Context/ThemeContext";
 
 const LoginScreen = () => {
     const { colors, customStyles } = useThemeContext();
@@ -20,21 +21,24 @@ const LoginScreen = () => {
         const { mobile, password } = form
         setSubmitting(true);
 
+        const passHash =  CryptoJS.AES.encrypt(password, "ly4@&gr$vnh905RyB>?%#@-(KSMT").toString();
+
         try {
             const response = await fetch(api.login, {
                 method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify(
                     {
                         "username": mobile,
-                        "password": password,
+                        "password": passHash,
                     }
                 ),
             });
 
             const data = await response.json()
+            console.log(data)
 
             if (data.success) {
                 await AsyncStorage.setItem('userToken', data.user.Autheticate_Id);
