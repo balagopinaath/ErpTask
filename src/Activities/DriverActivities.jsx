@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ScrollView, Dimensions } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Dimensions } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 
@@ -510,7 +510,7 @@ const DriverActivities = () => {
                                 <Text style={[styles(colors).timeEventTime, { color: colors.accent }]}>
                                     <MaterialIcons name='weight' size={20} color={colors.accent} />
                                     &nbsp;
-                                    {driverWiseTotals.find(total => total.DriverName === item.DriverName)?.TotalTonnage || 0}
+                                    {driverWiseTotals.find(total => total.DriverName === item.DriverName)?.TotalTonnage.toFixed(2) || 0}
                                 </Text>
                             </View>
 

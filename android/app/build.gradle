@@ -79,15 +79,15 @@ android {
         applicationId "com.erptask"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "1.0.0"
     }
     signingConfigs {
         release {
-            storeFile file(System.getenv("MYAPP_UPLOAD_STORE_FILE") ?: "${rootProject.projectDir}/my-upload-key.keystore")
-            storePassword System.getenv("MYAPP_UPLOAD_STORE_PASSWORD") ?: "SmtErp"
-            keyAlias System.getenv("MYAPP_UPLOAD_KEY_ALIAS") ?: "my-key-alias"
-            keyPassword System.getenv("MYAPP_UPLOAD_KEY_PASSWORD") ?: "SmtErp"
+            storeFile file("${rootProject.projectDir}/app/pukal.keystore")
+            storePassword System.getenv("MYAPP_UPLOAD_STORE_PASSWORD") ?: "pukaltech"
+            keyAlias System.getenv("MYAPP_UPLOAD_KEY_ALIAS") ?: "my-pukul-alias"
+            keyPassword System.getenv("MYAPP_UPLOAD_KEY_PASSWORD") ?: "pukaltech"
         }
         debug {
             storeFile file('debug.keystore')
