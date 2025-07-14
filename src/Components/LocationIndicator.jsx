@@ -5,20 +5,21 @@ import {
     TouchableOpacity,
     View,
     Alert,
-    useColorScheme
-} from 'react-native';
-import React, { useEffect, useState } from 'react';
-import Geolocation from '@react-native-community/geolocation';
-import { customColors, typography } from '../Constants/helper';
+    useColorScheme,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import Geolocation from "@react-native-community/geolocation";
+import { customColors, typography } from "../constants/helper";
 
 const LocationIndicator = ({ onLocationUpdate }) => {
     const scheme = useColorScheme();
-    const colors = customColors[scheme === 'dark' ? 'dark' : 'light'];
+    const colors = customColors[scheme === "dark" ? "dark" : "light"];
     const [currentLocation, setCurrentLocation] = useState({
-        latitude: '',
-        longitude: ''
+        latitude: "",
+        longitude: "",
     });
-    const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+    const [locationPermissionGranted, setLocationPermissionGranted] =
+        useState(false);
     const [locationEnabled, setLocationEnabled] = useState(false);
     const [refresh, setRefresh] = useState(false);
     const [fetchButton, setFetchButton] = useState(true);
@@ -26,7 +27,7 @@ const LocationIndicator = ({ onLocationUpdate }) => {
     useEffect(() => {
         const checkPermission = async () => {
             const granted = await PermissionsAndroid.check(
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
             );
             setLocationPermissionGranted(granted);
             return granted;
@@ -34,7 +35,7 @@ const LocationIndicator = ({ onLocationUpdate }) => {
 
         const checkLocationStatus = () => {
             Geolocation.getCurrentPosition(
-                (position) => {
+                position => {
                     setLocationEnabled(true);
                     const { latitude, longitude } = position.coords;
                     setCurrentLocation({ latitude, longitude });
@@ -42,10 +43,10 @@ const LocationIndicator = ({ onLocationUpdate }) => {
                         onLocationUpdate({ latitude, longitude });
                     }
                 },
-                (error) => {
+                error => {
                     setLocationEnabled(false);
-                    console.error('Error getting location:', error);
-                }
+                    console.error("Error getting location:", error);
+                },
             );
         };
 
@@ -55,8 +56,8 @@ const LocationIndicator = ({ onLocationUpdate }) => {
                 checkLocationStatus();
             } else {
                 Alert.alert(
-                    'Location Permission',
-                    'Location permission denied. App cannot function properly without it.'
+                    "Location Permission",
+                    "Location permission denied. App cannot function properly without it.",
                 );
             }
         };
@@ -66,22 +67,22 @@ const LocationIndicator = ({ onLocationUpdate }) => {
                 const granted = await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
                     {
-                        title: 'Sales App Location Permission',
-                        message: 'Sales App needs access to your location',
-                        buttonNeutral: 'Ask Me Later',
-                        buttonNegative: 'Cancel',
-                        buttonPositive: 'OK'
-                    }
+                        title: "Sales App Location Permission",
+                        message: "Sales App needs access to your location",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK",
+                    },
                 );
                 if (granted === PermissionsAndroid.RESULTS.GRANTED) {
                     setLocationPermissionGranted(true);
                     checkLocationStatus();
                 } else {
-                    console.log('Location permission denied');
+                    console.log("Location permission denied");
                     setLocationEnabled(false);
                     Alert.alert(
-                        'Location Permission',
-                        'Location permission denied. App cannot function properly without it.'
+                        "Location Permission",
+                        "Location permission denied. App cannot function properly without it.",
                     );
                 }
             } catch (err) {
@@ -100,7 +101,7 @@ const LocationIndicator = ({ onLocationUpdate }) => {
     };
 
     const refreshLocation = () => {
-        setCurrentLocation({ latitude: '', longitude: '' });
+        setCurrentLocation({ latitude: "", longitude: "" });
         setLocationEnabled(false);
     };
 
@@ -112,19 +113,28 @@ const LocationIndicator = ({ onLocationUpdate }) => {
                     <View style={styles(colors).dotContainer}>
                         <View
                             style={
-                                locationPermissionGranted ? styles(colors).activeDot : styles(colors).inactiveDot
+                                locationPermissionGranted
+                                    ? styles(colors).activeDot
+                                    : styles(colors).inactiveDot
                             }
                         />
                         <Text style={styles(colors).dotLabel}>Permission</Text>
                     </View>
                     <View style={styles(colors).dotContainer}>
-                        <View style={locationEnabled ? styles(colors).activeDot : styles(colors).inactiveDot} />
+                        <View
+                            style={
+                                locationEnabled
+                                    ? styles(colors).activeDot
+                                    : styles(colors).inactiveDot
+                            }
+                        />
                         <Text style={styles(colors).dotLabel}>Location</Text>
                     </View>
                     <View style={styles(colors).dotContainer}>
                         <View
                             style={
-                                currentLocation.latitude && currentLocation.longitude
+                                currentLocation.latitude &&
+                                currentLocation.longitude
                                     ? styles(colors).activeDot
                                     : styles(colors).inactiveDot
                             }
@@ -133,11 +143,19 @@ const LocationIndicator = ({ onLocationUpdate }) => {
                     </View>
                 </View>
                 <View style={styles(colors).buttonGroup}>
-                    <TouchableOpacity onPress={refreshLocation} style={styles(colors).button}>
-                        <Text style={styles(colors).buttonText}>Refresh Status</Text>
+                    <TouchableOpacity
+                        onPress={refreshLocation}
+                        style={styles(colors).button}>
+                        <Text style={styles(colors).buttonText}>
+                            Refresh Status
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={fetchEvent} style={styles(colors).button}>
-                        <Text style={styles(colors).buttonText}>Fetch Location</Text>
+                    <TouchableOpacity
+                        onPress={fetchEvent}
+                        style={styles(colors).button}>
+                        <Text style={styles(colors).buttonText}>
+                            Fetch Location
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -147,15 +165,21 @@ const LocationIndicator = ({ onLocationUpdate }) => {
 
 export default LocationIndicator;
 
-const styles = (colors) =>
+const styles = colors =>
     StyleSheet.create({
         card: {
             width: "90%",
-            alignSelf: 'center',
-            backgroundColor: colors.background === colors.black ? colors.black : colors.white,
+            alignSelf: "center",
+            backgroundColor:
+                colors.background === colors.black
+                    ? colors.black
+                    : colors.white,
             borderRadius: 10,
             padding: 15,
-            shadowColor: colors.background === colors.black ? colors.black : colors.white,
+            shadowColor:
+                colors.background === colors.black
+                    ? colors.black
+                    : colors.white,
             shadowOffset: {
                 width: 0,
                 height: 2,
@@ -164,56 +188,56 @@ const styles = (colors) =>
             shadowRadius: 2.22,
             elevation: 2,
             marginVertical: 10,
-            marginHorizontal: 20
+            marginHorizontal: 20,
         },
         cardTitle: {
             ...typography.body1(colors),
-            fontWeight: 'bold',
+            fontWeight: "bold",
             marginBottom: 10,
             borderBottomWidth: 1,
-            borderBottomColor: '#ccc',
-            borderStyle: 'dashed',
-            paddingBottom: 5
+            borderBottomColor: "#ccc",
+            borderStyle: "dashed",
+            paddingBottom: 5,
         },
         cardContent: {
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            alignItems: 'stretch'
+            flexDirection: "column",
+            justifyContent: "space-between",
+            alignItems: "stretch",
         },
         row: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 10
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10,
         },
         dotContainer: {
-            flexDirection: 'row',
-            alignItems: 'center'
+            flexDirection: "row",
+            alignItems: "center",
         },
         activeDot: {
             width: 12,
             height: 12,
             borderRadius: 6,
-            backgroundColor: '#DAF7A6',
+            backgroundColor: "#DAF7A6",
             marginRight: 5,
-            marginBottom: 4
+            marginBottom: 4,
         },
         inactiveDot: {
             width: 12,
             height: 12,
             borderRadius: 6,
-            backgroundColor: '#FF5733',
+            backgroundColor: "#FF5733",
             marginRight: 5,
-            marginBottom: 4
+            marginBottom: 4,
         },
         dotLabel: {
             ...typography.body2(colors),
-            textAlign: 'center'
+            textAlign: "center",
         },
         buttonGroup: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 10
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginTop: 10,
         },
         button: {
             borderWidth: 0.5,
@@ -221,11 +245,11 @@ const styles = (colors) =>
             borderColor: colors.accent,
             borderRadius: 5,
             marginHorizontal: 5,
-            alignItems: 'center'
+            alignItems: "center",
         },
         buttonText: {
             ...typography.body1(colors),
-            fontWeight: '500',
-            color: colors.text
-        }
+            fontWeight: "500",
+            color: colors.text,
+        },
     });

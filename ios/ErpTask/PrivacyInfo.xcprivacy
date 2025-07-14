@@ -32,6 +32,8 @@
       </array>
     </dict>
   </array>
+  <key>NSPrivacyCollectedDataTypes</key>
+	<array/>
   <key>NSPrivacyTracking</key>
   <false/>
 </dict>
