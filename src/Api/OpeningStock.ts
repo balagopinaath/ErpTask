@@ -18,7 +18,7 @@ export const itemWiseStock = async (from: Date | string, to: Date | string) => {
         });
 
         const json = await res.json();
-        console.log("Item-wise stock API response:", json);
+        // console.log("Item-wise stock API response:", json);
 
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -48,11 +48,6 @@ export const godownWiseStock = async (
             typeof to === "string" ? to : to.toISOString().split("T")[0];
 
         const url = API.godownWiseStock(fromStr, toStr);
-        console.log("Fetching godown-wise stock data:", {
-            fromStr,
-            toStr,
-            url,
-        });
 
         const res = await fetch(url, {
             method: "GET",
@@ -62,7 +57,7 @@ export const godownWiseStock = async (
         });
 
         const json = await res.json();
-        console.log("Godown-wise stock API response:", json);
+        // console.log("Godown-wise stock API response:", json);
 
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -78,5 +73,36 @@ export const godownWiseStock = async (
     } catch (error) {
         console.error("Error fetching godown-wise stock data:", error);
         throw error;
+    }
+};
+
+export const itemStockInfo = async (reqDate: Date | string) => {
+    try {
+        const reqDateStr =
+            typeof reqDate === "string"
+                ? reqDate
+                : reqDate.toISOString().split("T")[0];
+
+        const url = API.itemStockInfo(reqDateStr);
+
+        const res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        if (!json.success) {
+            throw new Error(json.message || "Failed to fetch item stock info");
+        }
+        return json.data || [];
+    } catch (err) {
+        console.error("Error fetching item stock info:", err);
+        throw err;
     }
 };

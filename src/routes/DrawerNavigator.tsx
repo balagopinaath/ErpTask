@@ -8,6 +8,10 @@ import { useTheme } from "../Context/ThemeContext";
 import { DrawerParamList } from "../Navigation/types";
 import ProfileScreen from "../Screens/Home/ProfileScreen";
 import CustomDrawerContent from "../Components/CustomDrawerContent";
+import Icon from "react-native-vector-icons/Ionicons";
+import SaleInvoice from "../Screens/Sales/SaleInvoice";
+import AttendanceInfo from "../Screens/Home/AttendanceInfo";
+import SaleOrder from "../Screens/Sales/SaleOrder";
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
@@ -21,7 +25,7 @@ const DrawerNavigator = () => {
                 <CustomDrawerContent {...props} />
             )}
             screenOptions={{
-                headerShown: true,
+                headerShown: false,
                 drawerStyle: {
                     backgroundColor: colors.background,
                     width: 280,
@@ -51,21 +55,24 @@ const DrawerNavigator = () => {
                 name="Profile"
                 component={ProfileScreen}
                 options={{
-                    headerShown: false,
-                }}
-            />
-            {/* <Drawer.Screen
-                name="TodayTask"
-                component={TodayTask}
-                options={{
-                    headerShown: false,
+                    title: "Profile",
+                    drawerLabel: "Profile",
+                    drawerIcon: ({
+                        color,
+                        size,
+                    }: {
+                        color: string;
+                        size: number;
+                    }) => (
+                        <Icon name="person-outline" size={size} color={color} />
+                    ),
                 }}
             />
             <Drawer.Screen
-                name="AttendanceInfo"
+                name="Attendance"
                 component={AttendanceInfo}
                 options={{
-                    title: "Attendance Info",
+                    title: "Attendance",
                     drawerLabel: "Attendance",
                     drawerIcon: ({
                         color,
@@ -77,7 +84,51 @@ const DrawerNavigator = () => {
                         <Icon name="people-outline" size={size} color={color} />
                     ),
                 }}
-            /> */}
+            />
+
+            <Drawer.Screen
+                name="invoiceSale"
+                component={SaleInvoice}
+                options={{
+                    title: "Sales Invoice",
+                    drawerLabel: "Invoice Sale",
+                    drawerIcon: ({
+                        color,
+                        size,
+                    }: {
+                        color: string;
+                        size: number;
+                    }) => (
+                        <Icon
+                            name="pricetag-outline"
+                            size={size}
+                            color={color}
+                        />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="saleOrderInvoice"
+                component={SaleOrder}
+                options={{
+                    title: "Sales Order",
+                    drawerLabel: "Order Invoice",
+                    drawerIcon: ({
+                        color,
+                        size,
+                    }: {
+                        color: string;
+                        size: number;
+                    }) => (
+                        <Icon
+                            name="pricetags-outline"
+                            size={size}
+                            color={color}
+                        />
+                    ),
+                }}
+            />
         </Drawer.Navigator>
     );
 };

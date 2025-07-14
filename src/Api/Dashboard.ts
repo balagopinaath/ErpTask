@@ -10,7 +10,7 @@ export const dashBoardDayBook = async (
     const toStr = typeof to === "string" ? to : to.toISOString().split("T")[0];
 
     const url = API.dashBoardDayBook(fromStr, toStr);
-    console.log("Day Book URL:", url);
+    // console.log("Day Book URL:", url);
     const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -30,7 +30,7 @@ export const dashBoardData = async (from: Date | string, companyId: number) => {
         typeof from === "string" ? from : from.toISOString().split("T")[0];
 
     const url = API.dashBoardData(fromStr, companyId);
-    console.log("Dashboard Data URL:", url);
+    // console.log("Dashboard Data URL:", url);
     const res = await fetch(url, {
         method: "GET",
         headers: {

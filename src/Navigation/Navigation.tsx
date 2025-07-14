@@ -11,6 +11,11 @@ import DrawerNavigator from "../routes/DrawerNavigator";
 import { RootStackParamList } from "./types";
 import SettingScreen from "../Screens/Home/SettingScreen";
 import ProfileScreen from "../Screens/Home/ProfileScreen";
+import SaleInvoice from "../Screens/Sales/SaleInvoice";
+import SaleOrder from "../Screens/Sales/SaleOrder";
+import PurchaseInvoice from "../Screens/Purchase/PurchaseInvoice";
+import PurchaseOrder from "../Screens/Purchase/PurchaseOrder";
+import ItemStack from "../Screens/Stack/ItemStack";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -48,6 +53,16 @@ const Navigation = () => {
                 <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="setting" component={SettingScreen} />
                 <Stack.Screen name="profile" component={ProfileScreen} />
+
+                <Stack.Screen name="invoiceSale" component={SaleInvoice} />
+                <Stack.Screen name="saleOrderInvoice" component={SaleOrder} />
+
+                <Stack.Screen
+                    name="purchaseInvoice"
+                    component={PurchaseInvoice}
+                />
+                <Stack.Screen name="purchaseOrder" component={PurchaseOrder} />
+                <Stack.Screen name="ItemStack" component={ItemStack} />
             </Stack.Navigator>
         </NavigationContainer>
     );

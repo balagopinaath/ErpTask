@@ -5,150 +5,320 @@ import {
     View,
     TouchableOpacity,
     RefreshControl,
+    Pressable,
 } from "react-native";
 import React from "react";
 import { MMKV } from "react-native-mmkv";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useTheme } from "../../Context/ThemeContext";
 import AppHeader from "../../Components/AppHeader";
 import { RootStackParamList } from "../../Navigation/types";
 import { responsiveHeight, responsiveWidth } from "../../constants/helper";
 import DatePickerButton from "../../Components/DatePickerButton";
 import { useQuery } from "@tanstack/react-query";
-import { dashBoardData, dashBoardDayBook } from "../../Api/Dashboard";
+import { salesInvoice, salesOrderInvoice } from "../../Api/Sales";
+import { getPurchaseOrderEntry, getPurchaseReport } from "../../Api/Purchase";
+import { itemStockInfo, itemWiseStock } from "../../Api/OpeningStock";
 
 const Home = () => {
     const { colors, typography } = useTheme();
     const styles = getStyles(typography, colors);
     const storage = new MMKV();
     const navigation =
-        useNavigation<NativeStackScreenProps<RootStackParamList>>();
+        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
     const [refreshing, setRefreshing] = React.useState(false);
 
-    // Module icons configuration for React Native
-    const getModuleIcon = (actualName: string) => {
-        const iconMap: {
-            [key: string]: {
-                name: string;
-                library: "MaterialIcons" | "MaterialCommunityIcons";
-                color: string;
-            };
-        } = {
-            STOCKVALUE: {
-                name: "inventory-2",
-                library: "MaterialIcons",
-                color: "#2196F3",
-            },
-            SaleOrder: {
-                name: "assignment",
-                library: "MaterialIcons",
-                color: "#4CAF50",
-            },
-            SalesInvoice: {
-                name: "receipt-long",
-                library: "MaterialIcons",
-                color: "#FF9800",
-            },
-            PurchaseOrder: {
-                name: "assignment-turned-in",
-                library: "MaterialIcons",
-                color: "#9C27B0",
-            },
-            PurchaseInvoice: {
-                name: "request-quote",
-                library: "MaterialIcons",
-                color: "#F44336",
-            },
-            EXPENCES: {
-                name: "hand-coin",
-                library: "MaterialCommunityIcons",
-                color: "#E91E63",
-            },
-            Payment: {
-                name: "payments",
-                library: "MaterialIcons",
-                color: "#3F51B5",
-            },
-            Receipt: {
-                name: "attach-money",
-                library: "MaterialIcons",
-                color: "#009688",
-            },
-            Journal: {
-                name: "menu-book",
-                library: "MaterialIcons",
-                color: "#795548",
-            },
-            StockJournal: {
-                name: "inventory",
-                library: "MaterialIcons",
-                color: "#607D8B",
-            },
-            Contra: {
-                name: "compare-arrows",
-                library: "MaterialIcons",
-                color: "#FF5722",
-            },
-        };
-        return (
-            iconMap[actualName] || {
-                name: "help",
-                library: "MaterialIcons",
-                color: colors.textSecondary,
-            }
-        );
-    };
-
-    const moduleIcons = [
-        { actualName: "STOCKVALUE", str: "STOCK VALUE", orderBy: 1 },
-        { actualName: "SaleOrder", str: "SALE ORDER", orderBy: 2 },
-        { actualName: "SalesInvoice", str: "SALES INVOICE", orderBy: 3 },
-        { actualName: "PurchaseOrder", str: "PURCHASE ORDER", orderBy: 4 },
-        { actualName: "PurchaseInvoice", str: "PURCHASE INVOICE", orderBy: 5 },
-        { actualName: "EXPENCES", str: "EXPENSES", orderBy: 6 },
-        { actualName: "Payment", str: "PAYMENT", orderBy: 7 },
-        { actualName: "Receipt", str: "RECEIPT", orderBy: 8 },
-        { actualName: "Journal", str: "JOURNAL", orderBy: 9 },
-        { actualName: "StockJournal", str: "STOCK JOURNAL", orderBy: 10 },
-        { actualName: "Contra", str: "CONTRA", orderBy: 11 },
-    ];
-
-    const companyId = storage.getNumber("companyId") || 1;
-
     const {
-        data: dayBookData = [],
+        data: saleOrderData = [],
         isLoading,
         refetch,
     } = useQuery({
-        queryKey: ["dashboardDayBook", selectedDate],
-        queryFn: () => dashBoardDayBook(selectedDate, selectedDate, companyId),
-        enabled: !!selectedDate && companyId !== undefined,
+        queryKey: ["saleOrder", selectedDate, selectedDate],
+        queryFn: () => salesOrderInvoice(selectedDate, selectedDate),
+        enabled: !!selectedDate,
     });
 
-    console.log("dayBookData", dayBookData);
+    const { data: invoiceData = [] } = useQuery({
+        queryKey: ["invoiceData", selectedDate, selectedDate],
+        queryFn: () => salesInvoice(selectedDate, selectedDate),
+        enabled: !!selectedDate,
+    });
 
-    const { data: otherData = {} } = useQuery({
-        queryKey: ["dashboardOtherData", selectedDate],
-        queryFn: () => dashBoardData(selectedDate, companyId),
-        enabled: !!selectedDate && companyId !== undefined,
-        select: data => {
-            const EXPENCES = data[1]?.[0]?.Total_Cost_Vlaue;
-            const STOCKVALUE = data[0]?.[0]?.Total_Stock_Value;
+    const { data: purchaseData = [], refetch: refetchPurchase } = useQuery({
+        queryKey: ["purchaseData", selectedDate, selectedDate],
+        queryFn: () => getPurchaseReport(selectedDate, selectedDate),
+        enabled: !!selectedDate,
+    });
 
-            return {
-                EXPENCES: EXPENCES ? parseFloat(EXPENCES) : 0,
-                STOCKVALUE: STOCKVALUE ? parseFloat(STOCKVALUE) : 0,
-            };
+    const {
+        data: purchaseOrderEntryData = [],
+        refetch: refetchPurchaseOrderEntry,
+    } = useQuery({
+        queryKey: ["purchaseOrderEntryData", selectedDate, selectedDate],
+        queryFn: () => getPurchaseOrderEntry(selectedDate, selectedDate),
+        enabled: !!selectedDate,
+    });
+
+    const { data: itemStockValue = [], refetch: refetchItemStockValue } =
+        useQuery({
+            queryKey: ["itemStackValue", selectedDate],
+            queryFn: () => itemStockInfo(selectedDate),
+            enabled: !!selectedDate,
+        });
+
+    const { data: itemWiseStockData = [], refetch: refetchItemWise } = useQuery(
+        {
+            queryKey: ["itemWiseStock", selectedDate, selectedDate],
+            queryFn: () => itemWiseStock(selectedDate, selectedDate),
+            enabled: !!selectedDate,
         },
-    });
+    );
 
-    console.log("otherData", otherData);
+    // Today's totals
+    const totalSales = saleOrderData.reduce(
+        (acc: number, item: { Total_Invoice_value?: number }) =>
+            acc + (item.Total_Invoice_value || 0),
+        0,
+    );
+
+    const totalInvoices = invoiceData.reduce(
+        (acc: number, item: { Total_Invoice_value?: number }) =>
+            acc + (item.Total_Invoice_value || 0),
+        0,
+    );
+
+    const totalPurchase = purchaseData.reduce(
+        (acc: number, stockGroup: any) => {
+            // Check if product_details exists and is an array
+            if (
+                !stockGroup.product_details ||
+                !Array.isArray(stockGroup.product_details)
+            ) {
+                return acc;
+            }
+
+            // Iterate through each product in product_details
+            const productDetailsTotal = stockGroup.product_details.reduce(
+                (productAcc: number, product: any) => {
+                    // Check if product_details_1 exists and is an array
+                    if (
+                        !product.product_details_1 ||
+                        !Array.isArray(product.product_details_1)
+                    ) {
+                        return productAcc;
+                    }
+
+                    // Sum all amounts in product_details_1
+                    const productDetail1Total =
+                        product.product_details_1.reduce(
+                            (detailAcc: number, detail: any) => {
+                                return detailAcc + (detail.amount || 0);
+                            },
+                            0,
+                        );
+
+                    return productAcc + productDetail1Total;
+                },
+                0,
+            );
+
+            return acc + productDetailsTotal;
+        },
+        0,
+    );
+
+    const totalStockValue = itemStockValue.reduce(
+        (acc: number, item: { CL_Value?: number }) =>
+            acc + (item.CL_Value || 0),
+        0,
+    );
+
+    const totalItemWise = itemWiseStockData.reduce(
+        (acc: number, item: { Product_Rate?: number }) =>
+            acc + (item.Product_Rate || 0),
+        0,
+    );
+
+    const totalSalesTonnage = saleOrderData.reduce(
+        (
+            acc: number,
+            item: {
+                Products_List?: Array<{
+                    Total_Qty?: number;
+                    Unit_Name?: string;
+                }>;
+            },
+        ) => {
+            if (!item.Products_List || !Array.isArray(item.Products_List)) {
+                return acc;
+            }
+
+            const productsTotal = item.Products_List.reduce(
+                (
+                    productAcc: number,
+                    product: { Total_Qty?: number; Unit_Name?: string },
+                ) => {
+                    const qty = product.Total_Qty || 0;
+                    const unit = product.Unit_Name?.toLowerCase() || "";
+
+                    // Convert to tons based on unit
+                    let qtyInTons = 0;
+                    if (unit.includes("kg") || unit.includes("kilogram")) {
+                        qtyInTons = qty / 1000; // Convert kg to tons
+                    } else if (unit.includes("ton") || unit.includes("tonne")) {
+                        qtyInTons = qty; // Already in tons
+                    } else if (unit.includes("g") && !unit.includes("kg")) {
+                        qtyInTons = qty / 1000000; // Convert grams to tons
+                    } else {
+                        // Assume kg if unit is unclear
+                        qtyInTons = qty / 1000;
+                    }
+
+                    return productAcc + qtyInTons;
+                },
+                0,
+            );
+
+            return acc + productsTotal;
+        },
+        0,
+    );
+
+    const totalInvoicesTonnage = invoiceData.reduce(
+        (
+            acc: number,
+            item: {
+                Products_List?: Array<{
+                    Total_Qty?: number;
+                    Unit_Name?: string;
+                }>;
+            },
+        ) => {
+            if (!item.Products_List || !Array.isArray(item.Products_List)) {
+                return acc;
+            }
+
+            const productsTotal = item.Products_List.reduce(
+                (
+                    productAcc: number,
+                    product: { Total_Qty?: number; Unit_Name?: string },
+                ) => {
+                    const qty = product.Total_Qty || 0;
+                    const unit = product.Unit_Name?.toLowerCase() || "";
+
+                    // Convert to tons based on unit
+                    let qtyInTons = 0;
+                    if (unit.includes("kg") || unit.includes("kilogram")) {
+                        qtyInTons = qty / 1000; // Convert kg to tons
+                    } else if (unit.includes("ton") || unit.includes("tonne")) {
+                        qtyInTons = qty; // Already in tons
+                    } else if (unit.includes("g") && !unit.includes("kg")) {
+                        qtyInTons = qty / 1000000; // Convert grams to tons
+                    } else {
+                        // Assume kg if unit is unclear
+                        qtyInTons = qty / 1000;
+                    }
+
+                    return productAcc + qtyInTons;
+                },
+                0,
+            );
+
+            return acc + productsTotal;
+        },
+        0,
+    );
+
+    const totalTonnage = purchaseData.reduce((acc: number, stockGroup: any) => {
+        // Check if product_details exists and is an array
+        if (
+            !stockGroup.product_details ||
+            !Array.isArray(stockGroup.product_details)
+        ) {
+            return acc;
+        }
+
+        const productDetailsTotal = stockGroup.product_details.reduce(
+            (productAcc: number, product: any) => {
+                // Check if product_details_1 exists and is an array
+                if (
+                    !product.product_details_1 ||
+                    !Array.isArray(product.product_details_1)
+                ) {
+                    return productAcc;
+                }
+
+                const productDetail1Total = product.product_details_1.reduce(
+                    (detailAcc: number, detail: any) => {
+                        const quantityInKg = detail.bill_qty || 0;
+                        const quantityInTons = quantityInKg / 1000; // convert kg to tons
+                        return detailAcc + quantityInTons;
+                    },
+                    0,
+                );
+                return productAcc + productDetail1Total;
+            },
+            0,
+        );
+        return acc + productDetailsTotal;
+    }, 0);
+
+    const totalPurchaseOrderEntry = purchaseOrderEntryData.reduce(
+        (acc: number, current: any) => {
+            return (
+                acc +
+                current.ItemDetails.reduce((itemAcc: any, item: any) => {
+                    return itemAcc + item.Weight * item.Rate;
+                }, 0)
+            );
+        },
+        0,
+    );
+
+    const totalPurchaseOrderEntryTonnage = purchaseOrderEntryData.reduce(
+        (acc: number, current: any) => {
+            if (!current.ItemDetails || !Array.isArray(current.ItemDetails)) {
+                return acc;
+            }
+
+            const itemsTotal = current.ItemDetails.reduce(
+                (itemAcc: number, item: any) => {
+                    // Weight is typically in kg, convert to tons
+                    const weightInKg = item.Weight || 0;
+                    const weightInTons = weightInKg / 1000;
+                    return itemAcc + weightInTons;
+                },
+                0,
+            );
+
+            return acc + itemsTotal;
+        },
+        0,
+    );
+
+    // Calculate total stock tonnage (assuming Bal_Qty is in kg)
+    const totalStockTonnage = itemStockValue.reduce(
+        (acc: number, item: { Bal_Qty?: number }) => {
+            const balQtyInKg = item.Bal_Qty || 0;
+            const balQtyInTons = balQtyInKg / 1000; // Convert kg to tons
+            return acc + balQtyInTons;
+        },
+        0,
+    );
+
+    const totalItemWiseTonnage = itemWiseStockData.reduce(
+        (acc: number, item: { Bal_Qty?: number }) => {
+            const balQtyInKg = item.Bal_Qty || 0;
+            const balQtyInTons = balQtyInKg / 1000; // Convert kg to tons
+            return acc + balQtyInTons;
+        },
+        0,
+    );
 
     // Format number for display
     const formatNumber = (num: number) => {
@@ -158,103 +328,33 @@ const Home = () => {
         return num.toString();
     };
 
+    // Format tonnage for display
+    const formatTonnage = (tons: number) => {
+        if (tons >= 1000) return `${(tons / 1000).toFixed(1)}K`;
+        return tons.toFixed(1);
+    };
+
     // Handle refresh
     const onRefresh = React.useCallback(async () => {
         setRefreshing(true);
-        await refetch();
+        await Promise.all([
+            refetch(),
+            refetchPurchase(),
+            refetchPurchaseOrderEntry(),
+            refetchItemStockValue(),
+            refetchItemWise(),
+        ]);
         setRefreshing(false);
-    }, [refetch]);
-
-    // Dashboard Card Component
-    const DashboardCard = ({
-        moduleData,
-        iconData,
-    }: {
-        moduleData: any;
-        iconData: any;
-    }) => {
-        const icon = getModuleIcon(iconData.actualName);
-        const IconComponent =
-            icon.library === "MaterialIcons" ? Icon : MaterialCommunityIcons;
-
-        // Process grouped data
-        const grouped = moduleData?.groupedData || [];
-        const erpData = grouped.filter((mod: any) => mod.dataSource === "ERP");
-        const tallyData = grouped.filter(
-            (mod: any) => mod.dataSource === "TALLY",
-        );
-
-        const erpTotal = erpData.reduce(
-            (acc: number, item: any) => acc + (item?.Amount || 0),
-            0,
-        );
-        const erpCount = erpData.reduce(
-            (acc: number, item: any) => acc + (item?.VoucherBreakUpCount || 0),
-            0,
-        );
-        const tallyTotal = tallyData.reduce(
-            (acc: number, item: any) => acc + (item?.Amount || 0),
-            0,
-        );
-        const tallyCount = tallyData.reduce(
-            (acc: number, item: any) => acc + (item?.VoucherBreakUpCount || 0),
-            0,
-        );
-
-        return (
-            <TouchableOpacity
-                style={[styles.dashboardCard, { borderLeftColor: icon.color }]}
-                activeOpacity={0.7}>
-                <View style={styles.cardContent}>
-                    <View style={styles.cardLeft}>
-                        <Text style={styles.cardTitle}>{iconData.str}</Text>
-
-                        {/* ERP Data Row */}
-                        <View style={styles.dataRow}>
-                            <Text style={styles.dataLabel}>ERP</Text>
-                            <View style={styles.dataValues}>
-                                <Text style={styles.dataAmount}>
-                                    {formatNumber(erpTotal)}
-                                </Text>
-                                <Text style={styles.dataCount}>
-                                    / {erpCount}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Tally Data Row */}
-                        <View style={styles.dataRow}>
-                            <Text style={styles.dataLabel}>TALLY</Text>
-                            <View style={styles.dataValues}>
-                                <Text style={styles.dataAmount}>
-                                    {formatNumber(tallyTotal)}
-                                </Text>
-                                <Text style={styles.dataCount}>
-                                    / {tallyCount}
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Icon */}
-                    <View
-                        style={[
-                            styles.cardIcon,
-                            { backgroundColor: icon.color + "20" },
-                        ]}>
-                        <IconComponent
-                            name={icon.name}
-                            size={32}
-                            color={icon.color}
-                        />
-                    </View>
-                </View>
-            </TouchableOpacity>
-        );
-    };
+    }, [
+        refetch,
+        refetchPurchase,
+        refetchPurchaseOrderEntry,
+        refetchItemStockValue,
+        refetchItemWise,
+    ]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container]} edges={["top", "bottom"]}>
             <AppHeader
                 navigation={navigation}
                 showDrawer={true}
@@ -309,79 +409,263 @@ const Home = () => {
                 <View style={styles.summarySection}>
                     <Text style={styles.sectionTitle}>Quick Summary</Text>
                     <View style={styles.summaryCards}>
-                        <View style={styles.summaryCard}>
-                            <Icon
-                                name="trending-up"
-                                size={24}
-                                color={colors.primary}
-                            />
-                            <Text style={styles.summaryCardTitle}>
-                                Total Stock Value
-                            </Text>
-                            <Text style={styles.summaryCardValue}>
-                                ₹
-                                {formatNumber(
-                                    (otherData as any).STOCKVALUE || 0,
-                                )}
-                            </Text>
+                        {/* First Row */}
+                        <View style={styles.summaryRow}>
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate("saleOrderInvoice")
+                                }>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="shopping-cart"
+                                        size={32}
+                                        color={colors.primary}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Sale Orders
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalSales)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.primary + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.primary}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.primary },
+                                            ]}>
+                                            {formatTonnage(totalSalesTonnage)}{" "}
+                                            Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate("invoiceSale")
+                                }>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="receipt"
+                                        size={32}
+                                        color={colors.accent}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Sale Invoices
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalInvoices)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.accent + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.accent}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.accent },
+                                            ]}>
+                                            {formatTonnage(
+                                                totalInvoicesTonnage,
+                                            )}{" "}
+                                            Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
                         </View>
-                        <View style={styles.summaryCard}>
-                            <Icon
-                                name="trending-down"
-                                size={24}
-                                color={colors.accent}
-                            />
-                            <Text style={styles.summaryCardTitle}>
-                                Total Expenses
-                            </Text>
-                            <Text style={styles.summaryCardValue}>
-                                ₹
-                                {formatNumber((otherData as any).EXPENCES || 0)}
-                            </Text>
+
+                        {/* Second Row */}
+                        <View style={styles.summaryRow}>
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate("purchaseInvoice")
+                                }>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="shopping-bag"
+                                        size={32}
+                                        color={colors.warning}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Purchase Invoices
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalPurchase)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.warning + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.info}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.info },
+                                            ]}>
+                                            {formatTonnage(totalTonnage)} Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate("purchaseOrder")
+                                }>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="assignment"
+                                        size={32}
+                                        color={colors.info}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Purchase Orders
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalPurchaseOrderEntry)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.info + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.info}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.info },
+                                            ]}>
+                                            {formatTonnage(
+                                                totalPurchaseOrderEntryTonnage,
+                                            )}{" "}
+                                            Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        </View>
+
+                        <View style={styles.summaryRow}>
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate("ItemStack")
+                                }>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="inventory"
+                                        size={32}
+                                        color={colors.success}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Item Stock Value
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalStockValue)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.success + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.success}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.success },
+                                            ]}>
+                                            {formatTonnage(totalStockTonnage)}{" "}
+                                            Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+
+                            <Pressable
+                                onPress={() => navigation.navigate("Stock")}>
+                                <View style={styles.summaryCard}>
+                                    <Icon
+                                        name="warehouse"
+                                        size={32}
+                                        color={colors.warning}
+                                    />
+                                    <Text style={styles.summaryCardTitle}>
+                                        Stock in Hand
+                                    </Text>
+                                    <Text style={styles.summaryCardValue}>
+                                        ₹{formatNumber(totalItemWise)}
+                                    </Text>
+                                    <View
+                                        style={[
+                                            styles.tonnageContainer,
+                                            {
+                                                backgroundColor:
+                                                    colors.warning + "15",
+                                            },
+                                        ]}>
+                                        <Icon
+                                            name="scale"
+                                            size={16}
+                                            color={colors.warning}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.tonnageText,
+                                                { color: colors.warning },
+                                            ]}>
+                                            {formatTonnage(
+                                                totalItemWiseTonnage,
+                                            )}{" "}
+                                            Tons
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
                         </View>
                     </View>
-                </View>
-
-                {/* Dashboard Cards Grid */}
-                <View style={styles.dashboardGrid}>
-                    {moduleIcons.map((iconData, index) => {
-                        // Find corresponding data or create default structure
-                        const moduleData =
-                            iconData.actualName === "EXPENCES" ||
-                            iconData.actualName === "STOCKVALUE"
-                                ? {
-                                      ModuleName: iconData.actualName,
-                                      groupedData: [
-                                          {
-                                              VoucherBreakUpCount: 0,
-                                              Voucher_Type: "",
-                                              ModuleName: iconData.actualName,
-                                              Amount:
-                                                  (otherData as any)[
-                                                      iconData.actualName
-                                                  ] || 0,
-                                              navLink: "",
-                                              dataSource: "TALLY",
-                                          },
-                                      ],
-                                  }
-                                : dayBookData.find(
-                                      (entry: any) =>
-                                          entry.ModuleName ===
-                                          iconData.actualName,
-                                  ) || {
-                                      ModuleName: iconData.actualName,
-                                      groupedData: [],
-                                  };
-
-                        return (
-                            <DashboardCard
-                                key={iconData.actualName}
-                                moduleData={moduleData}
-                                iconData={iconData}
-                            />
-                        );
-                    })}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -420,6 +704,15 @@ const getStyles = (typography: any, colors: any) =>
             alignItems: "center",
             gap: responsiveWidth(3),
         },
+        dateInfoContainer: {
+            marginTop: responsiveWidth(2),
+            alignItems: "center",
+        },
+        dateInfoText: {
+            ...typography.caption,
+            color: colors.textSecondary,
+            fontStyle: "italic",
+        },
         datePickerContainerStyle: {
             flex: 1,
         },
@@ -455,108 +748,87 @@ const getStyles = (typography: any, colors: any) =>
             color: colors.textSecondary,
         },
 
-        // Dashboard Grid
-        dashboardGrid: {
-            paddingHorizontal: responsiveWidth(4),
-            paddingBottom: responsiveHeight(2),
-        },
-
-        // Dashboard Cards
-        dashboardCard: {
-            backgroundColor: colors.white,
-            borderRadius: 12,
-            marginBottom: responsiveHeight(2),
-            borderLeftWidth: 4,
-            shadowColor: colors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-            overflow: "hidden",
-        },
-        cardContent: {
-            flexDirection: "row",
-            alignItems: "center",
-            padding: responsiveWidth(4),
-        },
-        cardLeft: {
-            flex: 1,
-            marginRight: responsiveWidth(3),
-        },
-        cardTitle: {
-            ...typography.h6,
-            color: colors.text,
-            fontWeight: "600",
-            marginBottom: responsiveWidth(2),
-            fontSize: responsiveWidth(4),
-        },
-        cardIcon: {
-            width: responsiveWidth(15),
-            height: responsiveWidth(15),
-            borderRadius: responsiveWidth(7.5),
-            alignItems: "center",
-            justifyContent: "center",
-        },
-
-        // Data Rows
-        dataRow: {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: responsiveWidth(1.5),
-        },
-        dataLabel: {
-            ...typography.body2,
-            color: colors.textSecondary,
-            fontWeight: "500",
-            minWidth: responsiveWidth(12),
-        },
-        dataValues: {
-            flexDirection: "row",
-            alignItems: "baseline",
-            gap: responsiveWidth(1),
-        },
-        dataAmount: {
-            ...typography.h6,
-            color: colors.text,
-            fontWeight: "700",
-        },
-        dataCount: {
-            ...typography.caption,
-            color: colors.textSecondary,
-        },
-
         // Summary Section
         summarySection: {
             paddingHorizontal: responsiveWidth(4),
             paddingVertical: responsiveHeight(2),
         },
         summaryCards: {
+            gap: responsiveWidth(4),
+        },
+        summaryRow: {
             flexDirection: "row",
-            gap: responsiveWidth(3),
+            justifyContent: "space-between",
+            marginBottom: responsiveWidth(4),
+            gap: responsiveWidth(4),
         },
         summaryCard: {
-            flex: 1,
+            width: (responsiveWidth(100) - responsiveWidth(12)) / 2,
             backgroundColor: colors.white,
-            borderRadius: 12,
+            borderRadius: 16,
             padding: responsiveWidth(4),
             alignItems: "center",
             shadowColor: colors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 6,
+            minHeight: responsiveHeight(18),
+            justifyContent: "space-between",
         },
         summaryCardTitle: {
             ...typography.body2,
             color: colors.textSecondary,
             textAlign: "center",
-            marginVertical: responsiveWidth(2),
+            marginTop: responsiveWidth(2),
+            marginBottom: responsiveWidth(3),
+            fontSize: responsiveWidth(3.5),
+            fontWeight: "600",
+            lineHeight: responsiveWidth(4.5),
         },
         summaryCardValue: {
-            ...typography.h5,
+            ...typography.h4,
             color: colors.text,
-            fontWeight: "700",
+            fontWeight: "800",
             textAlign: "center",
+            fontSize: responsiveWidth(5.5),
+            marginBottom: responsiveWidth(2),
+            letterSpacing: 0.5,
+        },
+        changeContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: responsiveWidth(3),
+            gap: responsiveWidth(1.5),
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            paddingHorizontal: responsiveWidth(3),
+            paddingVertical: responsiveWidth(1.5),
+            shadowColor: colors.black + "50",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 2,
+            elevation: 2,
+        },
+        changeText: {
+            ...typography.body2,
+            fontWeight: "700",
+            fontSize: responsiveWidth(3.2),
+        },
+        tonnageContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: responsiveWidth(2),
+            gap: responsiveWidth(1),
+            borderRadius: 12,
+            paddingHorizontal: responsiveWidth(2),
+            paddingVertical: responsiveWidth(1),
+        },
+        tonnageText: {
+            ...typography.caption,
+            fontWeight: "700",
+            fontSize: responsiveWidth(3),
         },
     });
