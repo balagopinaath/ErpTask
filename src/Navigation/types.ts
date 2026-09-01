@@ -6,10 +6,6 @@ interface SaleInvoiceParams {
     branchId: any;
 }
 
-interface purchaseInvoiceParams {
-    branchId: any;
-}
-
 interface PurchaseOrderParams {
     branchId: any;
 }
@@ -65,6 +61,14 @@ interface godownitemparams {
     toDate: Date;
 }
 
+interface godownItemWiseParams {
+    godownId: string;
+    godownName: string;
+    fromDate: string;
+    toDate: string;
+    companyId: string;
+}
+
 export type BottomTabParamList = {
     Home: undefined;
     Attendance: undefined;
@@ -78,33 +82,37 @@ export type DrawerParamList = {
     CompanySwitch: undefined;
 
     invoiceSale: SaleInvoiceParams;
-    purchaseInvoice: purchaseInvoiceParams;
     saleOrderInvoice: undefined;
     Attendance: undefined;
 };
 
 export type RootStackParamList = {
     Splash: undefined;
-    Login: undefined;
     MainDrawer: undefined;
+    Login: undefined;
     CompanySwitch: undefined;
     setting: undefined;
     profile: undefined;
     Home: undefined;
-    Stock: undefined;
+
+    saleOrderInvoice: SaleOrderInvoiceParams;
+    invoiceSale: SaleInvoiceParams;
+    purchaseOrder: PurchaseOrderParams;
+
     Stockitem:undefined;
     Stockgodown:undefined;
+    ItemStack: undefined;
+    GodownItemWise: godownItemWiseParams;
+    Ratemaster: undefined,
+    RatemasterAdmin: undefined,
+    DeliveryFunnel: undefined,
+
     receiptList: receiptListParams;
+    paymentList: paymentListParams;
+
     graphicalanalysis: undefined;
     ShetSheet: undefined;
 
-    invoiceSale: SaleInvoiceParams;
-    saleOrderInvoice: SaleOrderInvoiceParams;
-    PurchaseReportSummary: undefined;
-    purchaseOrder: PurchaseOrderParams;
-    purchaseInvoice : purchaseInvoiceParams;
-    ItemStack: undefined;
-    paymentList: paymentListParams;
     deliveryPend: deliveryPendParams;
     saleorderpend: saleorderpendParams;
     saleorderpendorder: salependorderparams;
@@ -117,4 +125,7 @@ export type RootStackParamList = {
     transactionlistitem:itemtransactionparams;
     transactionlistgodownitem:godownitemparams;
     ShetSheetDetail: { item: any };
+    // not used 
+    Stock: undefined; // BottomTabParamList
+
 };

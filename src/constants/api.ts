@@ -61,16 +61,6 @@ export const API = {
             branchId || ""
         }`,
 
-    saleorderPending: (
-        from: string,
-        to: string,
-        userId: number | string,
-        branchId?: number | string,
-    ) =>
-        `${baseURL}api/reports/reportsNonconvert/salesMobile?Fromdate=${from}&User_Id=${userId}&Todate=${to}&Branch_Id=${
-            branchId || ""
-        }`,
-
     saleorderPendingItem: (
         from: string,
         to: string,
@@ -80,9 +70,6 @@ export const API = {
         `${baseURL}api/reports/reportsNonconvert/salesMobileItem?Fromdate=${from}&User_Id=${userId}&Todate=${to}&Branch_Id=${
             branchId || ""
         }`,
-
-    purchaseReport: (from: string, to: string) =>
-        `${baseURL}api/reports/PurchaseOrderReportCard?Report_Type=2&Fromdate=${from}&Todate=${to}`,
 
     purchaseOrderEntry: (
         from: string,
@@ -116,15 +103,7 @@ export const API = {
             branchId || ""
         }`,
 
-    getPurchaseInvoice: (
-        from: string,
-        to: string,
-        userId: number,
-        branchId?: number,
-    ) =>
-        `${baseURL}api/purchase/purchaseInvoiceMobile?Fromdate=${from}&Todate=${to}&User_Id=${userId}&Branch_Id=${
-            branchId || ""
-        }`,
+    
 
     getPayment: (from: string, to: string, userId: number, branchId?: number) =>
         `${baseURL}api/payment/paymentMasterMobile?Fromdate=${from}&Todate=${to}&User_Id=${userId}&Branch_Id=${
@@ -176,4 +155,25 @@ export const API = {
         `${baseURL}api/sales/lrreportUpload?reqDate=${reqDate}`,
     postIrReportUpload: () => `${baseURL}api/sales/lrreportUpload`,
     putIrReportUpdate: () => `${baseURL}api/sales/lrreportUpload`,
+
+    // Reports API
+
+    reportApi: (path: string = "") => `https://reports.erpsmt.in/api/${path}`,
+
+
+    // Not used
+    saleorderPending: (
+        from: string,
+        to: string,
+        userId: number | string,
+        branchId?: number | string,
+    ) =>
+        `${baseURL}api/reports/reportsNonconvert/salesMobile?Fromdate=${from}&User_Id=${userId}&Todate=${to}&Branch_Id=${
+            branchId || ""
+        }`,
+
+
+    purchaseReport: (from: string, to: string) =>
+        `${baseURL}api/reports/PurchaseOrderReportCard?Report_Type=2&Fromdate=${from}&Todate=${to}`,
+
 };

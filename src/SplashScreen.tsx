@@ -8,10 +8,10 @@ import {
     Text,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { storage } from "./constants/storage";
-import { useTheme } from "./Context/ThemeContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "./Navigation/types";
+import { storage } from "./constants/storage";
+import { useTheme } from "./Context/ThemeContext";
 
 const SplashScreen = () => {
     const navigation =

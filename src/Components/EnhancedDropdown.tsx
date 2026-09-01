@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -51,58 +51,81 @@ const EnhancedDropdown: FC<EnhancedDropdownProps> = ({
     const { typography, colors } = useTheme();
     const styles = getStyles(typography, colors);
 
-    const filteredData =
-        data?.filter(item => {
-            if (!item || !item[labelField]) return false;
-            return item[labelField]
-                .toString()
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase());
-        }) || [];
+    const filteredData = useMemo(
+        () =>
+            data?.filter(item => {
+                if (!item || !item[labelField]) return false;
+                return item[labelField]
+                    .toString()
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase());
+            }) || [],
+        [data, labelField, searchQuery],
+    );
 
-    const toggleModal = () => {
-        setModalVisible(!modalVisible);
+    const toggleModal = useCallback(() => {
+        const nextVisible = !modalVisible;
+        setModalVisible(nextVisible);
         Animated.timing(animation, {
-            toValue: modalVisible ? 0 : 1,
+            toValue: nextVisible ? 1 : 0,
             duration: 300,
             useNativeDriver: true,
         }).start();
-    };
+    }, [animation, modalVisible]);
 
-    const renderItem = ({ item }: { item: any }) => {
-        if (!item || !item[labelField]) return null;
-        return (
-            <TouchableOpacity
-                style={[
-                    styles.dropdownItem,
-                    value === item[valueField] && styles.selectedItem,
-                ]}
-                onPress={() => {
-                    onChange?.(item);
-                    toggleModal();
-                    setSearchQuery("");
-                }}>
-                <Text
+    const renderItem = useCallback(
+        ({ item }: { item: any }) => {
+            if (!item || !item[labelField]) return null;
+            return (
+                <TouchableOpacity
                     style={[
-                        styles.dropdownItemText,
-                        value === item[valueField] && styles.selectedItemText,
-                    ]}>
-                    {item[labelField]}
-                </Text>
-                {value === item[valueField] && (
-                    <Icon name="checkmark" size={22} color={colors.primary} />
-                )}
-            </TouchableOpacity>
-        );
-    };
+                        styles.dropdownItem,
+                        value === item[valueField] && styles.selectedItem,
+                    ]}
+                    onPress={() => {
+                        onChange?.(item);
+                        toggleModal();
+                        setSearchQuery("");
+                    }}>
+                    <Text
+                        style={[
+                            styles.dropdownItemText,
+                            value === item[valueField] && styles.selectedItemText,
+                        ]}>
+                        {item[labelField]}
+                    </Text>
+                    {value === item[valueField] && (
+                        <Icon name="checkmark" size={22} color={colors.primary} />
+                    )}
+                </TouchableOpacity>
+            );
+        },
+        [
+            colors.primary,
+            labelField,
+            onChange,
+            styles.dropdownItem,
+            styles.dropdownItemText,
+            styles.selectedItem,
+            styles.selectedItemText,
+            toggleModal,
+            value,
+            valueField,
+        ],
+    );
 
-    const getSelectedLabel = () => {
+    const selectedLabel = useMemo(() => {
         if (!data || !Array.isArray(data)) return placeholder;
         const selectedItem = data.find(
             item => item && item[valueField] === value,
         );
         return selectedItem ? selectedItem[labelField] : placeholder;
-    };
+    }, [data, labelField, placeholder, value, valueField]);
+
+    const keyExtractor = useCallback(
+        (item: any) => item[valueField].toString(),
+        [valueField],
+    );
 
     const modalTranslateY = animation.interpolate({
         inputRange: [0, 1],
@@ -112,7 +135,9 @@ const EnhancedDropdown: FC<EnhancedDropdownProps> = ({
     return (
         <View style={[styles.container, containerStyle]}>
             {iconOnly ? (
-                <TouchableOpacity onPress={toggleModal}>
+                <TouchableOpacity
+                    onPress={toggleModal}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                     <FeatherIcon
                         name={iconName}
                         size={iconSize}
@@ -135,7 +160,7 @@ const EnhancedDropdown: FC<EnhancedDropdownProps> = ({
                         />
                     )}
                     <Text style={styles.dropdownButtonText}>
-                        {getSelectedLabel()}
+                        {selectedLabel}
                     </Text>
                     <Icon name="chevron-down" size={20} color={colors.grey} />
                 </TouchableOpacity>
@@ -190,9 +215,10 @@ const EnhancedDropdown: FC<EnhancedDropdownProps> = ({
 
                         <FlatList
                             data={filteredData}
-                            keyExtractor={item => item[valueField].toString()}
+                            keyExtractor={keyExtractor}
                             renderItem={renderItem}
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
                             ListEmptyComponent={
                                 <View style={styles.emptyContainer}>
                                     <Icon

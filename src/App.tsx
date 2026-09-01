@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { GestureHandlerRootView, Text } from "react-native-gesture-handler";
-import { baseurl } from "./constants/api";
-import { ThemeProvider } from "./Context/ThemeContext";
-import Navigation from "./Navigation/Navigation";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-gesture-handler";
+import Navigation from "./Navigation/Navigation";
+import { baseurl } from "./constants/api";
 import { storage } from "./constants/storage";
-import { View } from "react-native";
+import { ThemeProvider } from "./Context/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -28,15 +27,5 @@ const App = () => {
         </GestureHandlerRootView>
     );
 };
-
-// const App = () => {
-//     return (
-//         <View
-//             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-//         >
-//             <Text>App started</Text>
-//         </View>
-//     );
-// };
 
 export default App;
