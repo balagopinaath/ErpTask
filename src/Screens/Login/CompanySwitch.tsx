@@ -14,7 +14,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CheckBox from "@react-native-community/checkbox";
 import CryptoJS from "react-native-crypto-js";
 import { RootStackParamList } from "../../Navigation/types";
 import { useTheme } from "../../Context/ThemeContext";
@@ -22,7 +21,7 @@ import { fetchCompanyInfo } from "../../Api/Login";
 import { spacing, shadows } from "../../constants/helper";
 import { API, baseurl } from "../../constants/api";
 import AppHeader from "../../Components/AppHeader";
-
+import CustomCheckbox from "../../Components/CustomCheckbox";
 interface CompanyData {
     Company_Name: string;
     Local_Id: string;
@@ -41,6 +40,7 @@ const CompanySwitch = () => {
     const password = storage.getString("password") || "";
     const name = storage.getString("name") || "N/A";
     const currentCompanyId = storage.getString("companyId");
+    const [isSelected, setIsSelected] = React.useState(false);
 
     const companyName =
         storage.getString("companyName") || "No Company Selected";
@@ -341,26 +341,11 @@ const CompanySwitch = () => {
                                         }
                                         disabled={isSwitching}
                                     >
-                                        <CheckBox
-                                            value={
-                                                selectedCompany?.Global_Id ===
-                                                    company.Global_Id ||
-                                                (!selectedCompany &&
-                                                    String(
-                                                        company.Global_Id,
-                                                    ) === currentCompanyId)
-                                            }
-                                            onValueChange={() =>
-                                                !isSwitching &&
-                                                handleCompanySelection(company)
-                                            }
-                                            disabled={isSwitching}
-                                            tintColors={{
-                                                true: colors.primary,
-                                                false: colors.grey400,
-                                            }}
-                                            style={styles.checkbox}
-                                        />
+                                        <CustomCheckbox
+                                            value={isSelected}
+                                            onValueChange={setIsSelected}
+                                            label="Select company"
+                                            />
                                         <View
                                             style={styles.companyNameContainer}
                                         >
